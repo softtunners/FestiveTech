@@ -31,7 +31,6 @@ export default function BlessingExperience({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Active message & shloka
   const activePreset =
     GREETING_PRESETS.find((p) => p.id === selectedPresetId) || GREETING_PRESETS[0];
   const activeMessage = isCustom ? customMessage || activePreset.text : activePreset.text;
@@ -43,7 +42,6 @@ export default function BlessingExperience({
     setTimeout(() => setToastVisible(false), 3400);
   }, []);
 
-  // Card rendering function using pure React state
   const renderCard = useCallback(async () => {
     setIsGenerating(true);
     try {
@@ -66,7 +64,6 @@ export default function BlessingExperience({
     }
   }, [senderName, activeMessage, activeShloka, userPhotoUrl, format, frame]);
 
-  // Re-render when options change
   useEffect(() => {
     const timer = setTimeout(() => {
       renderCard();
@@ -74,7 +71,6 @@ export default function BlessingExperience({
     return () => clearTimeout(timer);
   }, [renderCard]);
 
-  // Photo upload handler
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -100,7 +96,6 @@ export default function BlessingExperience({
     return window.location.origin;
   };
 
-  // Download card as PNG
   const handleDownload = () => {
     if (!cardDataUrl) {
       showToast("कार्ड तैयार हो रहा है...");
@@ -120,7 +115,6 @@ export default function BlessingExperience({
     }
   };
 
-  // Share to WhatsApp
   const handleWhatsApp = () => {
     const shareUrl = getShareUrl();
     const sender = senderName.trim() ? `\n- *${senderName.trim()}*\n` : "";
@@ -129,7 +123,6 @@ export default function BlessingExperience({
     showToast("WhatsApp खुल रहा है...");
   };
 
-  // Web Share API (shares actual image file if supported)
   const handleNativeShare = async () => {
     const shareUrl = getShareUrl();
     const title = "गणेश चतुर्थी की हार्दिक शुभकामनाएं";
@@ -163,7 +156,7 @@ export default function BlessingExperience({
       <div className="container">
         {/* Section Header */}
         <div className="section-header">
-          <div className="hero-eyebrow" style={{ justifyContent: "center", marginBottom: 12 }}>
+          <div className="hero-eyebrow" style={{ justifyContent: "center", marginBottom: 14 }}>
             <TempleMiniIcon />
             <span>पावन उत्सव पोस्ट एवं स्टेटस क्रिएटर</span>
           </div>
@@ -173,61 +166,62 @@ export default function BlessingExperience({
           </p>
         </div>
 
-        {/* Two-Column Grid: Left Controls, Right Live Card Preview */}
+        {/* Two-Column Studio Layout */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: 32,
+            gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))",
+            gap: 36,
             alignItems: "start",
-            maxWidth: 1100,
+            maxWidth: 1140,
             margin: "0 auto",
           }}
         >
           {/* LEFT: Controls Panel */}
-          <div className="glass-card" style={{ padding: "28px" }}>
+          <div className="glass-card" style={{ padding: "32px" }}>
             <h3
               style={{
                 fontFamily: "var(--font-heading)",
-                fontSize: "1.25rem",
-                color: "var(--brown-deep)",
-                marginBottom: 20,
+                fontSize: "1.3rem",
+                color: "var(--gold-bright)",
+                marginBottom: 24,
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
+                gap: 10,
               }}
             >
               <SettingsIcon /> कार्ड अनुकूलित करें (Customize)
             </h3>
 
             {/* 1. Format Toggle */}
-            <div style={{ marginBottom: 22 }}>
+            <div style={{ marginBottom: 24 }}>
               <label
                 style={{
                   display: "block",
                   fontFamily: "var(--font-heading)",
                   fontWeight: 600,
                   fontSize: "0.92rem",
-                  color: "var(--brown-mid)",
-                  marginBottom: 8,
+                  color: "var(--text-gold)",
+                  marginBottom: 10,
                 }}
               >
                 कार्ड फॉर्मेट (Format)
               </label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <button
                   type="button"
                   onClick={() => setFormat("square")}
                   style={{
-                    padding: "10px 14px",
-                    borderRadius: 12,
-                    border: format === "square" ? "2px solid var(--bhagwa)" : "1.5px solid #E5E7EB",
-                    background: format === "square" ? "var(--amber-light)" : "#FFFFFF",
-                    color: format === "square" ? "var(--bhagwa-deep)" : "#4B5563",
+                    padding: "12px 14px",
+                    borderRadius: 14,
+                    border: format === "square" ? "2px solid #F59E0B" : "1.5px solid rgba(245,158,11,0.18)",
+                    background: format === "square" ? "rgba(245,158,11,0.22)" : "rgba(255,255,255,0.03)",
+                    color: format === "square" ? "#FFFBEB" : "var(--text-muted)",
                     fontWeight: 700,
-                    fontSize: "0.88rem",
+                    fontSize: "0.9rem",
                     cursor: "pointer",
-                    transition: "all 0.2s",
+                    boxShadow: format === "square" ? "0 0 16px rgba(245,158,11,0.3)" : "none",
+                    transition: "all 0.22s",
                   }}
                 >
                   WhatsApp Chat (1:1)
@@ -236,15 +230,16 @@ export default function BlessingExperience({
                   type="button"
                   onClick={() => setFormat("story")}
                   style={{
-                    padding: "10px 14px",
-                    borderRadius: 12,
-                    border: format === "story" ? "2px solid var(--bhagwa)" : "1.5px solid #E5E7EB",
-                    background: format === "story" ? "var(--amber-light)" : "#FFFFFF",
-                    color: format === "story" ? "var(--bhagwa-deep)" : "#4B5563",
+                    padding: "12px 14px",
+                    borderRadius: 14,
+                    border: format === "story" ? "2px solid #F59E0B" : "1.5px solid rgba(245,158,11,0.18)",
+                    background: format === "story" ? "rgba(245,158,11,0.22)" : "rgba(255,255,255,0.03)",
+                    color: format === "story" ? "#FFFBEB" : "var(--text-muted)",
                     fontWeight: 700,
-                    fontSize: "0.88rem",
+                    fontSize: "0.9rem",
                     cursor: "pointer",
-                    transition: "all 0.2s",
+                    boxShadow: format === "story" ? "0 0 16px rgba(245,158,11,0.3)" : "none",
+                    transition: "all 0.22s",
                   }}
                 >
                   WhatsApp Status (9:16)
@@ -253,71 +248,75 @@ export default function BlessingExperience({
             </div>
 
             {/* 2. Frame Style Selector */}
-            <div style={{ marginBottom: 22 }}>
+            <div style={{ marginBottom: 24 }}>
               <label
                 style={{
                   display: "block",
                   fontFamily: "var(--font-heading)",
                   fontWeight: 600,
                   fontSize: "0.92rem",
-                  color: "var(--brown-mid)",
-                  marginBottom: 8,
+                  color: "var(--text-gold)",
+                  marginBottom: 10,
                 }}
               >
                 फ्रेम स्टाइल (Choose Frame)
               </label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
                 {[
                   { id: "temple-arch" as CardFrame, title: "स्वर्ण तोरण", desc: "Temple Gold" },
                   { id: "marigold" as CardFrame, title: "गेंदा पुष्प", desc: "Marigold" },
                   { id: "royal-velvet" as CardFrame, title: "दीप उत्सव", desc: "Royal Velvet" },
-                ].map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => setFrame(f.id)}
-                    style={{
-                      padding: "10px 8px",
-                      borderRadius: 12,
-                      border: frame === f.id ? "2px solid var(--bhagwa)" : "1.5px solid #E5E7EB",
-                      background: frame === f.id ? "var(--amber-light)" : "#FFFFFF",
-                      textAlign: "center",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    <div
+                ].map((f) => {
+                  const isSelected = frame === f.id;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFrame(f.id)}
                       style={{
-                        fontWeight: 700,
-                        fontSize: "0.86rem",
-                        color: frame === f.id ? "var(--bhagwa-deep)" : "#1F2937",
+                        padding: "12px 8px",
+                        borderRadius: 14,
+                        border: isSelected ? "2px solid #F59E0B" : "1.5px solid rgba(245,158,11,0.16)",
+                        background: isSelected ? "rgba(245,158,11,0.22)" : "rgba(255,255,255,0.03)",
+                        textAlign: "center",
+                        cursor: "pointer",
+                        boxShadow: isSelected ? "0 0 16px rgba(245,158,11,0.25)" : "none",
+                        transition: "all 0.22s",
                       }}
                     >
-                      {f.title}
-                    </div>
-                    <div style={{ fontSize: "0.72rem", color: "#6B7280", marginTop: 2 }}>
-                      {f.desc}
-                    </div>
-                  </button>
-                ))}
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          fontSize: "0.88rem",
+                          color: isSelected ? "#FFFBEB" : "var(--text-gold)",
+                        }}
+                      >
+                        {f.title}
+                      </div>
+                      <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: 2 }}>
+                        {f.desc}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* 3. Greeting Message Preset */}
-            <div style={{ marginBottom: 22 }}>
+            <div style={{ marginBottom: 24 }}>
               <label
                 style={{
                   display: "block",
                   fontFamily: "var(--font-heading)",
                   fontWeight: 600,
                   fontSize: "0.92rem",
-                  color: "var(--brown-mid)",
-                  marginBottom: 8,
+                  color: "var(--text-gold)",
+                  marginBottom: 10,
                 }}
               >
                 शुभकामना संदेश (Blessing Message)
               </label>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {GREETING_PRESETS.map((p) => {
                   const isSelected = !isCustom && selectedPresetId === p.id;
                   return (
@@ -328,29 +327,29 @@ export default function BlessingExperience({
                         setIsCustom(false);
                       }}
                       style={{
-                        padding: "10px 14px",
-                        borderRadius: 10,
-                        border: isSelected ? "2px solid var(--bhagwa)" : "1.5px solid #E5E7EB",
-                        background: isSelected ? "var(--amber-light)" : "#FAFAFA",
+                        padding: "12px 16px",
+                        borderRadius: 14,
+                        border: isSelected ? "2px solid #F59E0B" : "1px solid rgba(245,158,11,0.14)",
+                        background: isSelected ? "rgba(245,158,11,0.16)" : "rgba(255,255,255,0.03)",
                         cursor: "pointer",
-                        transition: "all 0.18s",
+                        transition: "all 0.2s",
                       }}
                     >
                       <div
                         style={{
                           fontWeight: 700,
-                          fontSize: "0.88rem",
-                          color: isSelected ? "var(--bhagwa-deep)" : "#1F2937",
+                          fontSize: "0.92rem",
+                          color: isSelected ? "#FDE68A" : "#FFFDF5",
                         }}
                       >
                         {p.title}
                       </div>
                       <div
                         style={{
-                          fontSize: "0.78rem",
-                          color: "#6B7280",
-                          marginTop: 3,
-                          lineHeight: 1.4,
+                          fontSize: "0.82rem",
+                          color: "var(--text-muted)",
+                          marginTop: 4,
+                          lineHeight: 1.45,
                         }}
                       >
                         {p.text}
@@ -359,17 +358,16 @@ export default function BlessingExperience({
                   );
                 })}
 
-                {/* Custom text button */}
                 <button
                   type="button"
                   onClick={() => setIsCustom(true)}
                   style={{
-                    padding: "8px 12px",
-                    borderRadius: 8,
-                    border: isCustom ? "2px solid var(--bhagwa)" : "1.5px dashed #D1D5DB",
-                    background: isCustom ? "var(--amber-light)" : "transparent",
-                    color: isCustom ? "var(--bhagwa-deep)" : "#4B5563",
-                    fontSize: "0.82rem",
+                    padding: "9px 14px",
+                    borderRadius: 10,
+                    border: isCustom ? "2px solid #F59E0B" : "1.5px dashed rgba(245,158,11,0.3)",
+                    background: isCustom ? "rgba(245,158,11,0.18)" : "transparent",
+                    color: isCustom ? "#FDE68A" : "var(--text-muted)",
+                    fontSize: "0.85rem",
                     fontWeight: 600,
                     cursor: "pointer",
                     textAlign: "center",
@@ -386,10 +384,12 @@ export default function BlessingExperience({
                     placeholder="अपना पावन संदेश यहाँ लिखें..."
                     style={{
                       width: "100%",
-                      padding: "10px",
-                      borderRadius: 10,
-                      border: "1.5px solid var(--bhagwa)",
-                      fontSize: "0.88rem",
+                      padding: "12px",
+                      borderRadius: 12,
+                      border: "1.5px solid #F59E0B",
+                      background: "rgba(0,0,0,0.5)",
+                      color: "#FFFDF5",
+                      fontSize: "0.9rem",
                       fontFamily: "var(--font-body)",
                       outline: "none",
                       resize: "none",
@@ -400,7 +400,7 @@ export default function BlessingExperience({
             </div>
 
             {/* 4. Sender Name (Optional) */}
-            <div style={{ marginBottom: 22 }}>
+            <div style={{ marginBottom: 24 }}>
               <label
                 htmlFor="sender-name-input"
                 style={{
@@ -408,8 +408,8 @@ export default function BlessingExperience({
                   fontFamily: "var(--font-heading)",
                   fontWeight: 600,
                   fontSize: "0.92rem",
-                  color: "var(--brown-mid)",
-                  marginBottom: 6,
+                  color: "var(--text-gold)",
+                  marginBottom: 8,
                 }}
               >
                 आपका नाम / परिवार का नाम (वैकल्पिक)
@@ -423,16 +423,18 @@ export default function BlessingExperience({
                 maxLength={40}
                 style={{
                   width: "100%",
-                  padding: "12px 16px",
-                  borderRadius: 12,
-                  border: "1.5px solid #D1D5DB",
-                  background: "#FFFFFF",
-                  fontSize: "0.94rem",
+                  padding: "14px 18px",
+                  borderRadius: 14,
+                  border: "1.5px solid rgba(245,158,11,0.28)",
+                  background: "rgba(0,0,0,0.45)",
+                  color: "#FFFDF5",
+                  fontSize: "0.96rem",
                   fontFamily: "var(--font-heading)",
                   outline: "none",
+                  boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4)",
                 }}
               />
-              <p style={{ fontSize: "0.76rem", color: "#6B7280", marginTop: 5 }}>
+              <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginTop: 6 }}>
                 कार्ड के नीचे &quot;शुभेच्छुक: {senderName || "आपका नाम"}&quot; लिखा आएगा। खाली रखने पर मंत्र दिखेगा।
               </p>
             </div>
@@ -445,8 +447,8 @@ export default function BlessingExperience({
                   fontFamily: "var(--font-heading)",
                   fontWeight: 600,
                   fontSize: "0.92rem",
-                  color: "var(--brown-mid)",
-                  marginBottom: 6,
+                  color: "var(--text-gold)",
+                  marginBottom: 8,
                 }}
               >
                 अपनी फोटो जोड़ें (वैकल्पिक)
@@ -456,17 +458,18 @@ export default function BlessingExperience({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    padding: "10px 18px",
-                    borderRadius: 12,
-                    border: "1.5px solid var(--bhagwa)",
-                    background: "#FFFFFF",
-                    color: "var(--bhagwa-deep)",
+                    padding: "11px 20px",
+                    borderRadius: 14,
+                    border: "1.5px solid var(--border-gold-strong)",
+                    background: "rgba(245,158,11,0.15)",
+                    color: "var(--gold-bright)",
                     fontWeight: 700,
-                    fontSize: "0.88rem",
+                    fontSize: "0.9rem",
                     cursor: "pointer",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 8,
+                    transition: "all 0.2s",
                   }}
                 >
                   <CameraMiniIcon />
@@ -484,13 +487,13 @@ export default function BlessingExperience({
                     type="button"
                     onClick={handleRemovePhoto}
                     style={{
-                      padding: "10px 14px",
-                      borderRadius: 12,
-                      border: "1px solid #EF4444",
-                      background: "#FEF2F2",
-                      color: "#DC2626",
+                      padding: "11px 16px",
+                      borderRadius: 14,
+                      border: "1px solid rgba(239,68,68,0.5)",
+                      background: "rgba(239,68,68,0.15)",
+                      color: "#FCA5A5",
                       fontWeight: 600,
-                      fontSize: "0.82rem",
+                      fontSize: "0.85rem",
                       cursor: "pointer",
                     }}
                   >
@@ -498,37 +501,38 @@ export default function BlessingExperience({
                   </button>
                 )}
               </div>
-              <p style={{ fontSize: "0.76rem", color: "#6B7280", marginTop: 5 }}>
+              <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginTop: 6 }}>
                 कार्ड के नीचे आपके नाम के साथ सुनहरे घेरे (Golden Frame) में आपकी फोटो जुड़ेगी।
               </p>
             </div>
           </div>
 
           {/* RIGHT: Live Preview & Instant Share Actions */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div
               style={{
                 position: "relative",
-                background: "#0C0A09",
-                padding: "20px",
-                borderRadius: "24px",
-                border: "1px solid rgba(245,158,11,0.2)",
-                boxShadow: "0 20px 48px rgba(0,0,0,0.25)",
+                background: "linear-gradient(145deg, rgba(20, 8, 4, 0.95) 0%, rgba(10, 4, 2, 0.98) 100%)",
+                padding: "24px",
+                borderRadius: "28px",
+                border: "1px solid var(--border-gold-strong)",
+                boxShadow: "0 28px 64px rgba(0,0,0,0.6), 0 0 35px rgba(245,158,11,0.15)",
               }}
             >
               {/* Badge */}
               <div
                 style={{
                   position: "absolute",
-                  top: 14,
-                  right: 18,
+                  top: 16,
+                  right: 20,
                   background: "rgba(245,158,11,0.2)",
-                  border: "1px solid rgba(245,158,11,0.4)",
+                  border: "1px solid rgba(245,158,11,0.45)",
                   color: "#FDE68A",
-                  padding: "4px 10px",
+                  padding: "5px 12px",
                   borderRadius: 20,
-                  fontSize: "0.74rem",
+                  fontSize: "0.76rem",
                   fontWeight: 600,
+                  letterSpacing: "0.03em",
                   zIndex: 2,
                 }}
               >
@@ -551,13 +555,12 @@ export default function BlessingExperience({
                     alt="पावन बाप्पा ग्रीटिंग कार्ड"
                     style={{
                       maxWidth: "100%",
-                      maxHeight: format === "story" ? "520px" : "440px",
+                      maxHeight: format === "story" ? "540px" : "440px",
                       height: "auto",
-                      borderRadius: "18px",
+                      borderRadius: "20px",
                       display: "block",
                       margin: "0 auto",
-                      boxShadow:
-                        "0 18px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(245,158,11,0.25)",
+                      boxShadow: "0 20px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,158,11,0.3)",
                     }}
                   />
                 ) : (
@@ -569,23 +572,23 @@ export default function BlessingExperience({
             </div>
 
             {/* 3D Action Buttons */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <button
                 type="button"
                 onClick={handleDownload}
                 className="btn-3d"
                 style={{
-                  background: "linear-gradient(180deg, #10B981 0%, #059669 100%)",
-                  boxShadow: "0 4px 0 #047857, 0 8px 18px rgba(16,185,129,0.35)",
+                  background: "linear-gradient(180deg, #10B981 0%, #047857 100%)",
+                  boxShadow: "0 4px 0 #065F46, 0 10px 24px rgba(16,185,129,0.35)",
                   color: "#FFFFFF",
-                  padding: "14px 18px",
-                  borderRadius: 14,
+                  padding: "16px 20px",
+                  borderRadius: 16,
                   fontWeight: 700,
-                  fontSize: "0.95rem",
+                  fontSize: "1rem",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 8,
+                  gap: 10,
                   cursor: "pointer",
                   border: "none",
                 }}
@@ -600,16 +603,16 @@ export default function BlessingExperience({
                 className="btn-3d"
                 style={{
                   background: "linear-gradient(180deg, #25D366 0%, #128C7E 100%)",
-                  boxShadow: "0 4px 0 #075E54, 0 8px 18px rgba(37,211,102,0.35)",
+                  boxShadow: "0 4px 0 #075E54, 0 10px 24px rgba(37,211,102,0.35)",
                   color: "#FFFFFF",
-                  padding: "14px 18px",
-                  borderRadius: 14,
+                  padding: "16px 20px",
+                  borderRadius: 16,
                   fontWeight: 700,
-                  fontSize: "0.95rem",
+                  fontSize: "1rem",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 8,
+                  gap: 10,
                   cursor: "pointer",
                   border: "none",
                 }}
@@ -624,19 +627,19 @@ export default function BlessingExperience({
               type="button"
               onClick={handleNativeShare}
               style={{
-                background: "transparent",
-                border: "1.5px solid var(--bhagwa)",
-                color: "var(--bhagwa-deep)",
-                padding: "11px 18px",
-                borderRadius: 12,
+                background: "rgba(245,158,11,0.08)",
+                border: "1.5px solid var(--border-gold)",
+                color: "var(--gold-bright)",
+                padding: "13px 20px",
+                borderRadius: 14,
                 fontWeight: 700,
-                fontSize: "0.9rem",
+                fontSize: "0.94rem",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 8,
-                transition: "all 0.18s",
+                gap: 10,
+                transition: "all 0.2s",
               }}
             >
               <ShareMiniIcon />
@@ -655,14 +658,14 @@ export default function BlessingExperience({
             bottom: 24,
             left: "50%",
             transform: "translateX(-50%)",
-            background: "#1C1917",
-            color: "#FFFBEB",
-            border: "1px solid var(--bhagwa)",
-            padding: "12px 24px",
+            background: "#180A04",
+            color: "#FFFDF5",
+            border: "1.5px solid var(--gold-pure)",
+            padding: "12px 28px",
             borderRadius: 30,
-            fontSize: "0.92rem",
+            fontSize: "0.95rem",
             fontWeight: 600,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+            boxShadow: "0 12px 35px rgba(0,0,0,0.6), 0 0 20px rgba(245,158,11,0.3)",
             zIndex: 9999,
           }}
         >
@@ -675,16 +678,16 @@ export default function BlessingExperience({
 
 function TempleMiniIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--bhagwa)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-pure)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M9 21V11a3 3 0 0 1 6 0v10" />
     </svg>
   );
 }
 function SettingsIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--bhagwa-deep)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold-pure)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   );
 }

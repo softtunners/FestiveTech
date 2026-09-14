@@ -1,726 +1,382 @@
 "use client";
-import { useState, useRef, useCallback, useEffect } from "react";
+
+import { useState, useRef, useCallback, useEffect, useImperativeHandle } from "react";
+import { generateBlessingCard, CardFormat, CardFrame, GREETING_PRESETS } from "@/lib/cardGenerator";
+import { analytics } from "@/lib/analytics";
 import {
-  generateBlessingCard,
-  CardFormat,
-  CardFrame,
-  GREETING_PRESETS,
-} from "@/lib/cardGenerator";
+  WhatsAppIcon, DownloadIcon, ShareIcon, CameraIcon, CopyIcon, TempleIcon,
+} from "@/components/icons";
+
+export interface BlessingHandle {
+  /** Share straight to WhatsApp — driven by the hero / nav / floating buttons. */
+  shareWhatsApp: () => void;
+}
 
 interface BlessingExperienceProps {
   initialName?: string;
-  fromName?: string;
+  ref?: React.Ref<BlessingHandle>;
 }
 
-export default function BlessingExperience({
-  initialName = "",
-}: BlessingExperienceProps) {
+const FORMATS: { id: CardFormat; name: string; sub: string; shape: string }[] = [
+  { id: "square", name: "चैट में", sub: "चौकोर", shape: "square" },
+  { id: "story", name: "स्टेटस में", sub: "लंबा", shape: "story" },
+];
+
+const FRAMES: { id: CardFrame; name: string }[] = [
+  { id: "temple-arch", name: "सुनहरा" },
+  { id: "marigold", name: "गेंदा" },
+  { id: "royal-velvet", name: "लाल" },
+  { id: "peacock", name: "मोरपंखी" },
+  { id: "violet", name: "बैंगनी" },
+];
+
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+
+export default function BlessingExperience({ initialName = "", ref }: BlessingExperienceProps) {
   const [senderName, setSenderName] = useState(initialName);
-  const [selectedPresetId, setSelectedPresetId] = useState("blessing-1");
+  const [presetId, setPresetId] = useState("blessing-1");
   const [customMessage, setCustomMessage] = useState("");
   const [isCustom, setIsCustom] = useState(false);
   const [format, setFormat] = useState<CardFormat>("square");
   const [frame, setFrame] = useState<CardFrame>("temple-arch");
-  const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
-  const [photoFileName, setPhotoFileName] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoName, setPhotoName] = useState("");
+  const [isGenerating, setIsGenerating] = useState(true);
   const [cardDataUrl, setCardDataUrl] = useState<string | null>(null);
-  const [toastMsg, setToastMsg] = useState("");
-  const [toastVisible, setToastVisible] = useState(false);
+  const [toast, setToast] = useState<string>("");
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const activePreset =
-    GREETING_PRESETS.find((p) => p.id === selectedPresetId) || GREETING_PRESETS[0];
-  const activeMessage = isCustom ? customMessage || activePreset.text : activePreset.text;
-  const activeShloka = activePreset.shloka;
+  const preset = GREETING_PRESETS.find((p) => p.id === presetId) || GREETING_PRESETS[0];
+  const message = isCustom ? customMessage || preset.text : preset.text;
 
-  const showToast = useCallback((msg: string) => {
-    setToastMsg(msg);
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 3400);
+  const say = useCallback((msg: string) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(""), 3200);
   }, []);
+
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
   const renderCard = useCallback(async () => {
     setIsGenerating(true);
     try {
       const canvas = await generateBlessingCard({
         senderName,
-        blessingMessage: activeMessage,
-        shloka: activeShloka,
+        blessingMessage: message,
+        shloka: preset.shloka,
         closing: "गणपती बाप्पा मोरया! मंगलमूर्ती मोरया!",
-        userPhotoDataUrl: userPhotoUrl,
+        userPhotoDataUrl: photoUrl,
         format,
         frame,
       });
-
       canvasRef.current = canvas;
       setCardDataUrl(canvas.toDataURL("image/png"));
     } catch (e) {
-      console.error("Error generating card:", e);
+      console.error("card render failed:", e);
+      say("कार्ड नहीं बन पाया। फिर कोशिश करें।");
     } finally {
       setIsGenerating(false);
     }
-  }, [senderName, activeMessage, activeShloka, userPhotoUrl, format, frame]);
+  }, [senderName, message, preset.shloka, photoUrl, format, frame, say]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      renderCard();
-    }, 150);
-    return () => clearTimeout(timer);
+    const t = setTimeout(renderCard, 180);
+    return () => clearTimeout(t);
   }, [renderCard]);
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPhotoFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const url = ev.target?.result as string;
-      setUserPhotoUrl(url);
-      showToast("फोटो सफलतापूर्वक जोड़ी गई!");
-    };
-    reader.readAsDataURL(file);
-  };
+  const shareUrl = () =>
+    typeof window === "undefined" ? "https://ganpatibappa.online" : window.location.origin;
 
-  const handleRemovePhoto = () => {
-    setUserPhotoUrl(null);
-    setPhotoFileName("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    showToast("फोटो हटा दी गई।");
-  };
+  const shareText = useCallback(() => {
+    const from = senderName.trim() ? `\n— *${senderName.trim()}*\n` : "";
+    return `🌺 *गणेश चतुर्थी की हार्दिक शुभकामनाएं!* 🙏\n\n${message}\n\n*गणपती बाप्पा मोरया!*${from}\n\n✨ आप भी अपना कार्ड बनाएं:\n👉 ${shareUrl()}`;
+  }, [senderName, message]);
 
-  const getShareUrl = () => {
-    if (typeof window === "undefined") return "https://ganpatibappa.online";
-    return window.location.origin;
-  };
+  const download = useCallback(() => {
+    if (!cardDataUrl) { say("कार्ड बन रहा है…"); return; }
+    const a = document.createElement("a");
+    const safe = senderName.trim() ? senderName.trim().replace(/\s+/g, "-") : "ganesh";
+    a.download = `bappa-${format}-${safe}.png`;
+    a.href = cardDataUrl;
+    a.click();
+    say("कार्ड सेव हो गया! ✅");
+    analytics.cardDownloaded(format, frame, Boolean(photoUrl));
+  }, [cardDataUrl, senderName, format, frame, photoUrl, say]);
 
-  const handleDownload = () => {
-    if (!cardDataUrl) {
-      showToast("कार्ड तैयार हो रहा है...");
-      return;
-    }
-    try {
-      const link = document.createElement("a");
-      const safeName = senderName.trim()
-        ? senderName.trim().replace(/\s+/g, "-")
-        : "ganesh-utsav";
-      link.download = `bappa-${format}-${safeName}.png`;
-      link.href = cardDataUrl;
-      link.click();
-      showToast("HD कार्ड डाउनलोड हो गया!");
-    } catch {
-      showToast("कृपया स्क्रीनशॉट लेकर सेव करें।");
-    }
-  };
+  /**
+   * One WhatsApp path for the whole site.
+   *
+   * Tries to share the actual image first — that is what people expect when
+   * they say "send on WhatsApp". Only falls back to a text+link share when
+   * the browser refuses files.
+   */
+  const shareWhatsApp = useCallback(async () => {
+    analytics.cardShared("whatsapp", format);
 
-  const handleWhatsApp = () => {
-    const shareUrl = getShareUrl();
-    const sender = senderName.trim() ? `\n- *${senderName.trim()}*\n` : "";
-    const msg = `🌺 *गणेश चतुर्थी की हार्दिक शुभकामनाएं!* 🙏\n\n${activeMessage}\n\n*गणपती बाप्पा मोरया! मंगलमूर्ती मोरया!*${sender}\n\n✨ आप भी अपने नाम और फोटो का सुंदर स्टेटस कार्ड बनाएं:\n👉 ${shareUrl}`;
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, "_blank");
-    showToast("WhatsApp खुल रहा है...");
-  };
-
-  const handleNativeShare = async () => {
-    const shareUrl = getShareUrl();
-    const title = "गणेश चतुर्थी की हार्दिक शुभकामनाएं";
-    const text = `🌺 गणपती बाप्पा मोरया! आपके लिए पावन आशीर्वाद कार्ड:\n👉 ${shareUrl}`;
-
-    if (navigator.share) {
+    if (canvasRef.current && navigator.share && navigator.canShare) {
       try {
-        if (canvasRef.current && navigator.canShare) {
-          const blob = await new Promise<Blob>((res) =>
-            canvasRef.current!.toBlob((b) => res(b!), "image/png")
-          );
-          const file = new File([blob], `bappa-card.png`, { type: "image/png" });
+        const blob = await new Promise<Blob | null>((res) =>
+          canvasRef.current!.toBlob((b) => res(b), "image/png"),
+        );
+        if (blob) {
+          const file = new File([blob], "bappa-card.png", { type: "image/png" });
           if (navigator.canShare({ files: [file] })) {
-            await navigator.share({ title, text, files: [file] });
-            showToast("सफलतापूर्वक शेयर किया गया!");
+            await navigator.share({ text: shareText(), files: [file] });
+            say("भेज दिया! 🙏");
             return;
           }
         }
-        await navigator.share({ title, text, url: shareUrl });
-        showToast("शेयर किया गया!");
-      } catch (err: unknown) {
-        if (err instanceof Error && err.name !== "AbortError") handleDownload();
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
+        // Fall through to the link share below.
       }
-    } else {
-      handleDownload();
+    }
+
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText())}`, "_blank");
+    say("WhatsApp खुल रहा है…");
+  }, [format, shareText, say]);
+
+  useImperativeHandle(ref, () => ({ shareWhatsApp }), [shareWhatsApp]);
+
+  const shareOther = async () => {
+    if (!navigator.share) { download(); return; }
+    try {
+      await navigator.share({ text: shareText(), url: shareUrl() });
+      analytics.cardShared("native", format);
+    } catch (err) {
+      if (err instanceof Error && err.name !== "AbortError") download();
     }
   };
 
+  const copyText = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText());
+      say("कॉपी हो गया! ✅");
+      analytics.cardShared("copy_link", format);
+    } catch {
+      say("कॉपी नहीं हुआ।");
+    }
+  };
+
+  const onPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { say("फोटो ही चुनें।"); return; }
+    if (file.size > MAX_PHOTO_BYTES) { say("फोटो बहुत बड़ी है (8 MB तक)।"); return; }
+
+    setPhotoName(file.name);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setPhotoUrl(ev.target?.result as string);
+      say("फोटो लग गई! ✅");
+      analytics.photoAdded();
+    };
+    reader.onerror = () => say("फोटो नहीं खुली।");
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = () => {
+    setPhotoUrl(null);
+    setPhotoName("");
+    if (fileRef.current) fileRef.current.value = "";
+    say("फोटो हटा दी।");
+  };
+
   return (
-    <section id="card-creator" className="section" style={{ scrollMarginTop: "70px" }}>
+    <section id="card" className="section section--paper" style={{ scrollMarginTop: 78 }}>
       <div className="container">
-        {/* Section Header */}
-        <div className="section-header">
-          <div className="hero-eyebrow" style={{ justifyContent: "center", marginBottom: 14 }}>
-            <TempleMiniIcon />
-            <span>पावन उत्सव पोस्ट एवं स्टेटस क्रिएटर</span>
-          </div>
-          <h2 className="section-title">अपना पावन बाप्पा कार्ड व स्टेटस बनाएं</h2>
-          <p className="section-sub">
-            फ्रेम चुनें, अपना संदेश व नाम जोड़ें और WhatsApp Status व मित्रों के लिए HD कार्ड डाउनलोड करें।
-          </p>
+        <div className="section-head">
+          <span className="eyebrow eyebrow--saffron"><TempleIconWrap /> कार्ड बनाएं</span>
+          <h2 className="section-title">अपना कार्ड बनाकर भेजें</h2>
+          <p className="section-sub">नीचे चुनते जाएं — कार्ड अपने आप बनता जाएगा।</p>
         </div>
 
-        {/* Two-Column Studio Layout */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))",
-            gap: 36,
-            alignItems: "start",
-            maxWidth: 1140,
-            margin: "0 auto",
-          }}
-        >
-          {/* LEFT: Controls Panel */}
-          <div className="glass-card" style={{ padding: "32px" }}>
-            <h3
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "1.3rem",
-                color: "var(--gold-bright)",
-                marginBottom: 24,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              <SettingsIcon /> कार्ड अनुकूलित करें (Customize)
-            </h3>
-
-            {/* 1. Format Toggle */}
-            <div style={{ marginBottom: 24 }}>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "var(--font-heading)",
-                  fontWeight: 600,
-                  fontSize: "0.92rem",
-                  color: "var(--text-gold)",
-                  marginBottom: 10,
-                }}
-              >
-                कार्ड फॉर्मेट (Format)
-              </label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <button
-                  type="button"
-                  onClick={() => setFormat("square")}
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: 14,
-                    border: format === "square" ? "2px solid #F59E0B" : "1.5px solid rgba(245,158,11,0.18)",
-                    background: format === "square" ? "rgba(245,158,11,0.22)" : "rgba(255,255,255,0.03)",
-                    color: format === "square" ? "#FFFBEB" : "var(--text-muted)",
-                    fontWeight: 700,
-                    fontSize: "0.9rem",
-                    cursor: "pointer",
-                    boxShadow: format === "square" ? "0 0 16px rgba(245,158,11,0.3)" : "none",
-                    transition: "all 0.22s",
-                  }}
-                >
-                  WhatsApp Chat (1:1)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormat("story")}
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: 14,
-                    border: format === "story" ? "2px solid #F59E0B" : "1.5px solid rgba(245,158,11,0.18)",
-                    background: format === "story" ? "rgba(245,158,11,0.22)" : "rgba(255,255,255,0.03)",
-                    color: format === "story" ? "#FFFBEB" : "var(--text-muted)",
-                    fontWeight: 700,
-                    fontSize: "0.9rem",
-                    cursor: "pointer",
-                    boxShadow: format === "story" ? "0 0 16px rgba(245,158,11,0.3)" : "none",
-                    transition: "all 0.22s",
-                  }}
-                >
-                  WhatsApp Status (9:16)
-                </button>
+        <div className="maker-grid">
+          {/* ---------------- Steps ---------------- */}
+          <div className="panel">
+            <Step n={1} label="कहाँ भेजना है?">
+              <div className="pick-grid pick-grid--2">
+                {FORMATS.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className="pick"
+                    aria-pressed={format === f.id}
+                    onClick={() => { setFormat(f.id); analytics.cardCustomised("format", f.id); }}
+                  >
+                    <span className={`shape shape--${f.shape}`} aria-hidden="true" />
+                    <span className="pick-name">{f.name}</span>
+                    <span className="pick-sub">{f.sub}</span>
+                  </button>
+                ))}
               </div>
-            </div>
+            </Step>
 
-            {/* 2. Frame Style Selector */}
-            <div style={{ marginBottom: 24 }}>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "var(--font-heading)",
-                  fontWeight: 600,
-                  fontSize: "0.92rem",
-                  color: "var(--text-gold)",
-                  marginBottom: 10,
-                }}
-              >
-                फ्रेम स्टाइल (Choose Frame)
-              </label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-                {[
-                  { id: "temple-arch" as CardFrame, title: "स्वर्ण तोरण", desc: "Temple Gold" },
-                  { id: "marigold" as CardFrame, title: "गेंदा पुष्प", desc: "Marigold" },
-                  { id: "royal-velvet" as CardFrame, title: "दीप उत्सव", desc: "Royal Velvet" },
-                ].map((f) => {
-                  const isSelected = frame === f.id;
-                  return (
-                    <button
-                      key={f.id}
-                      type="button"
-                      onClick={() => setFrame(f.id)}
-                      style={{
-                        padding: "12px 8px",
-                        borderRadius: 14,
-                        border: isSelected ? "2px solid #F59E0B" : "1.5px solid rgba(245,158,11,0.16)",
-                        background: isSelected ? "rgba(245,158,11,0.22)" : "rgba(255,255,255,0.03)",
-                        textAlign: "center",
-                        cursor: "pointer",
-                        boxShadow: isSelected ? "0 0 16px rgba(245,158,11,0.25)" : "none",
-                        transition: "all 0.22s",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          fontSize: "0.88rem",
-                          color: isSelected ? "#FFFBEB" : "var(--text-gold)",
-                        }}
-                      >
-                        {f.title}
-                      </div>
-                      <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: 2 }}>
-                        {f.desc}
-                      </div>
-                    </button>
-                  );
-                })}
+            <Step n={2} label="कौन सा रंग?">
+              <div className="pick-grid pick-grid--3">
+                {FRAMES.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className="pick"
+                    aria-pressed={frame === f.id}
+                    onClick={() => { setFrame(f.id); analytics.cardCustomised("frame", f.id); }}
+                  >
+                    <span className={`swatch swatch--${f.id}`} aria-hidden="true" />
+                    <span className="pick-name">{f.name}</span>
+                  </button>
+                ))}
               </div>
-            </div>
+            </Step>
 
-            {/* 3. Greeting Message Preset */}
-            <div style={{ marginBottom: 24 }}>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "var(--font-heading)",
-                  fontWeight: 600,
-                  fontSize: "0.92rem",
-                  color: "var(--text-gold)",
-                  marginBottom: 10,
-                }}
-              >
-                शुभकामना संदेश (Blessing Message)
-              </label>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {GREETING_PRESETS.map((p) => {
-                  const isSelected = !isCustom && selectedPresetId === p.id;
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => {
-                        setSelectedPresetId(p.id);
-                        setIsCustom(false);
-                      }}
-                      style={{
-                        padding: "12px 16px",
-                        borderRadius: 14,
-                        border: isSelected ? "2px solid #F59E0B" : "1px solid rgba(245,158,11,0.14)",
-                        background: isSelected ? "rgba(245,158,11,0.16)" : "rgba(255,255,255,0.03)",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          fontSize: "0.92rem",
-                          color: isSelected ? "#FDE68A" : "#FFFDF5",
-                        }}
-                      >
-                        {p.title}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "0.82rem",
-                          color: "var(--text-muted)",
-                          marginTop: 4,
-                          lineHeight: 1.45,
-                        }}
-                      >
-                        {p.text}
-                      </div>
-                    </div>
-                  );
-                })}
-
+            <Step n={3} label="क्या लिखा हो?">
+              <div className="pick-grid" role="radiogroup" aria-label="संदेश">
+                {GREETING_PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    role="radio"
+                    className="pick msg-pick"
+                    aria-checked={!isCustom && presetId === p.id}
+                    onClick={() => { setPresetId(p.id); setIsCustom(false); analytics.cardCustomised("message", p.id); }}
+                  >
+                    <span className="pick-name">{p.title}</span>
+                    <span className="msg-body">{p.text}</span>
+                  </button>
+                ))}
                 <button
                   type="button"
+                  className="pick"
+                  aria-pressed={isCustom}
                   onClick={() => setIsCustom(true)}
-                  style={{
-                    padding: "9px 14px",
-                    borderRadius: 10,
-                    border: isCustom ? "2px solid #F59E0B" : "1.5px dashed rgba(245,158,11,0.3)",
-                    background: isCustom ? "rgba(245,158,11,0.18)" : "transparent",
-                    color: isCustom ? "#FDE68A" : "var(--text-muted)",
-                    fontSize: "0.85rem",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    textAlign: "center",
-                  }}
                 >
-                  + अपना खुद का संदेश लिखें (Write custom)
+                  <span className="pick-name">✍️ खुद लिखें</span>
                 </button>
-
                 {isCustom && (
                   <textarea
+                    className="textarea"
                     rows={3}
+                    maxLength={220}
                     value={customMessage}
                     onChange={(e) => setCustomMessage(e.target.value)}
-                    placeholder="अपना पावन संदेश यहाँ लिखें..."
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      borderRadius: 12,
-                      border: "1.5px solid #F59E0B",
-                      background: "rgba(0,0,0,0.5)",
-                      color: "#FFFDF5",
-                      fontSize: "0.9rem",
-                      fontFamily: "var(--font-body)",
-                      outline: "none",
-                      resize: "none",
-                    }}
+                    placeholder="यहाँ लिखें…"
+                    aria-label="अपना संदेश"
                   />
                 )}
               </div>
-            </div>
+            </Step>
 
-            {/* 4. Sender Name (Optional) */}
-            <div style={{ marginBottom: 24 }}>
-              <label
-                htmlFor="sender-name-input"
-                style={{
-                  display: "block",
-                  fontFamily: "var(--font-heading)",
-                  fontWeight: 600,
-                  fontSize: "0.92rem",
-                  color: "var(--text-gold)",
-                  marginBottom: 8,
-                }}
-              >
-                आपका नाम / परिवार का नाम (वैकल्पिक)
-              </label>
+            <Step n={4} label="आपका नाम">
               <input
-                id="sender-name-input"
+                className="input"
                 type="text"
                 value={senderName}
-                onChange={(e) => setSenderName(e.target.value)}
-                placeholder="उदा: राहुल शर्मा / शर्मा परिवार"
                 maxLength={40}
-                style={{
-                  width: "100%",
-                  padding: "14px 18px",
-                  borderRadius: 14,
-                  border: "1.5px solid rgba(245,158,11,0.28)",
-                  background: "rgba(0,0,0,0.45)",
-                  color: "#FFFDF5",
-                  fontSize: "0.96rem",
-                  fontFamily: "var(--font-heading)",
-                  outline: "none",
-                  boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4)",
-                }}
+                onChange={(e) => setSenderName(e.target.value)}
+                placeholder="जैसे: राहुल शर्मा"
+                aria-label="आपका नाम"
               />
-              <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginTop: 6 }}>
-                कार्ड के नीचे &quot;शुभेच्छुक: {senderName || "आपका नाम"}&quot; लिखा आएगा। खाली रखने पर मंत्र दिखेगा।
-              </p>
-            </div>
+              <p className="step-hint">कार्ड पर नीचे आपका नाम आएगा। न चाहें तो खाली छोड़ दें।</p>
+            </Step>
 
-            {/* 5. User Photo Upload (Optional) */}
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "var(--font-heading)",
-                  fontWeight: 600,
-                  fontSize: "0.92rem",
-                  color: "var(--text-gold)",
-                  marginBottom: 8,
-                }}
-              >
-                अपनी फोटो जोड़ें (वैकल्पिक)
-              </label>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    padding: "11px 20px",
-                    borderRadius: 14,
-                    border: "1.5px solid var(--border-gold-strong)",
-                    background: "rgba(245,158,11,0.15)",
-                    color: "var(--gold-bright)",
-                    fontWeight: 700,
-                    fontSize: "0.9rem",
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    transition: "all 0.2s",
-                  }}
-                >
-                  <CameraMiniIcon />
-                  {photoFileName ? "फोटो बदलें" : "फोटो चुनें"}
+            <Step n={5} label="अपनी फोटो (चाहें तो)">
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button type="button" className="btn btn--ghost" onClick={() => fileRef.current?.click()}>
+                  <CameraIcon />
+                  {photoName ? "बदलें" : "फोटो लगाएं"}
                 </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  style={{ display: "none" }}
-                />
-                {userPhotoUrl && (
-                  <button
-                    type="button"
-                    onClick={handleRemovePhoto}
-                    style={{
-                      padding: "11px 16px",
-                      borderRadius: 14,
-                      border: "1px solid rgba(239,68,68,0.5)",
-                      background: "rgba(239,68,68,0.15)",
-                      color: "#FCA5A5",
-                      fontWeight: 600,
-                      fontSize: "0.85rem",
-                      cursor: "pointer",
-                    }}
-                  >
+                {photoUrl && (
+                  <button type="button" className="btn btn--ghost" onClick={removePhoto}>
                     हटाएं
                   </button>
                 )}
               </div>
-              <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginTop: 6 }}>
-                कार्ड के नीचे आपके नाम के साथ सुनहरे घेरे (Golden Frame) में आपकी फोटो जुड़ेगी।
-              </p>
-            </div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                onChange={onPhoto}
+                style={{ display: "none" }}
+                aria-label="फोटो चुनें"
+              />
+              <p className="step-hint">🔒 फोटो फ़ोन से बाहर नहीं जाती।</p>
+            </Step>
           </div>
 
-          {/* RIGHT: Live Preview & Instant Share Actions */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <div
-              style={{
-                position: "relative",
-                background: "linear-gradient(145deg, rgba(20, 8, 4, 0.95) 0%, rgba(10, 4, 2, 0.98) 100%)",
-                padding: "24px",
-                borderRadius: "28px",
-                border: "1px solid var(--border-gold-strong)",
-                boxShadow: "0 28px 64px rgba(0,0,0,0.6), 0 0 35px rgba(245,158,11,0.15)",
-              }}
-            >
-              {/* Badge */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: 16,
-                  right: 20,
-                  background: "rgba(245,158,11,0.2)",
-                  border: "1px solid rgba(245,158,11,0.45)",
-                  color: "#FDE68A",
-                  padding: "5px 12px",
-                  borderRadius: 20,
-                  fontSize: "0.76rem",
-                  fontWeight: 600,
-                  letterSpacing: "0.03em",
-                  zIndex: 2,
-                }}
-              >
-                {format === "square" ? "1:1 Chat Post" : "9:16 Full Screen Status"}
-              </div>
-
-              {/* Card Display */}
-              <div
-                style={{
-                  minHeight: format === "story" ? 420 : 340,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+          {/* ---------------- Preview + actions ---------------- */}
+          <div className="preview-col">
+            <div className="preview-frame">
+              <span className="preview-tag">{format === "square" ? "चैट" : "स्टेटस"}</span>
+              <div className="preview-body" style={{ minHeight: format === "story" ? 380 : 300 }}>
                 {cardDataUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={cardDataUrl}
-                    alt="पावन बाप्पा ग्रीटिंग कार्ड"
+                    alt="आपका तैयार कार्ड"
+                    className="preview-img"
                     style={{
-                      maxWidth: "100%",
-                      maxHeight: format === "story" ? "540px" : "440px",
-                      height: "auto",
-                      borderRadius: "20px",
-                      display: "block",
-                      margin: "0 auto",
-                      boxShadow: "0 20px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,158,11,0.3)",
+                      maxHeight: format === "story" ? 480 : 380,
+                      opacity: isGenerating ? 0.55 : 1,
+                      transition: "opacity 0.2s",
                     }}
                   />
                 ) : (
-                  <div style={{ color: "#FDE68A", fontSize: "0.95rem" }}>
-                    {isGenerating ? "कार्ड तैयार हो रहा है..." : "कार्ड लोड हो रहा है..."}
+                  <div
+                    className="preview-skel"
+                    style={{ aspectRatio: format === "story" ? "9 / 16" : "1 / 1", maxHeight: 420 }}
+                  >
+                    कार्ड बन रहा है…
                   </div>
                 )}
               </div>
+              <p aria-live="polite" className="sr-only">
+                {isGenerating ? "कार्ड बन रहा है" : "कार्ड तैयार है"}
+              </p>
             </div>
 
-            {/* 3D Action Buttons */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <button
-                type="button"
-                onClick={handleDownload}
-                className="btn-3d"
-                style={{
-                  background: "linear-gradient(180deg, #10B981 0%, #047857 100%)",
-                  boxShadow: "0 4px 0 #065F46, 0 10px 24px rgba(16,185,129,0.35)",
-                  color: "#FFFFFF",
-                  padding: "16px 20px",
-                  borderRadius: 16,
-                  fontWeight: 700,
-                  fontSize: "1rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  cursor: "pointer",
-                  border: "none",
-                }}
-              >
-                <DownloadMiniIcon />
-                HD डाउनलोड करें
-              </button>
-
-              <button
-                type="button"
-                onClick={handleWhatsApp}
-                className="btn-3d"
-                style={{
-                  background: "linear-gradient(180deg, #25D366 0%, #128C7E 100%)",
-                  boxShadow: "0 4px 0 #075E54, 0 10px 24px rgba(37,211,102,0.35)",
-                  color: "#FFFFFF",
-                  padding: "16px 20px",
-                  borderRadius: 16,
-                  fontWeight: 700,
-                  fontSize: "1rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  cursor: "pointer",
-                  border: "none",
-                }}
-              >
-                <WhatsAppMiniIcon />
-                WhatsApp शेयर
-              </button>
-            </div>
-
-            {/* Secondary Share Action */}
-            <button
-              type="button"
-              onClick={handleNativeShare}
-              style={{
-                background: "rgba(245,158,11,0.08)",
-                border: "1.5px solid var(--border-gold)",
-                color: "var(--gold-bright)",
-                padding: "13px 20px",
-                borderRadius: 14,
-                fontWeight: 700,
-                fontSize: "0.94rem",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                transition: "all 0.2s",
-              }}
-            >
-              <ShareMiniIcon />
-              अन्य ऐप्स पर शेयर करें (Instagram / Facebook)
+            {/* The payoff. Green and biggest, every time. */}
+            <button className="btn btn--wa btn--block btn--big" onClick={shareWhatsApp}>
+              <WhatsAppIcon />
+              WhatsApp पर भेजें
             </button>
+
+            <button className="btn btn--save btn--block" onClick={download} disabled={!cardDataUrl}>
+              <DownloadIcon />
+              फ़ोन में सेव करें
+            </button>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button className="btn btn--ghost" style={{ flex: 1, minWidth: 150 }} onClick={shareOther}>
+                <ShareIcon /> और जगह
+              </button>
+              <button className="btn btn--ghost" style={{ flex: 1, minWidth: 150 }} onClick={copyText}>
+                <CopyIcon /> कॉपी
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Toast */}
-      {toastVisible && (
-        <div
-          role="status"
-          style={{
-            position: "fixed",
-            bottom: 24,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "#180A04",
-            color: "#FFFDF5",
-            border: "1.5px solid var(--gold-pure)",
-            padding: "12px 28px",
-            borderRadius: 30,
-            fontSize: "0.95rem",
-            fontWeight: 600,
-            boxShadow: "0 12px 35px rgba(0,0,0,0.6), 0 0 20px rgba(245,158,11,0.3)",
-            zIndex: 9999,
-          }}
-        >
-          {toastMsg}
-        </div>
-      )}
+      {toast && <div className="toast" role="status"><span aria-hidden="true">🪔</span>{toast}</div>}
     </section>
   );
 }
 
-function TempleMiniIcon() {
+function Step({ n, label, children }: { n: number; label: string; children: React.ReactNode }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-pure)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M9 21V11a3 3 0 0 1 6 0v10" />
-    </svg>
+    <div className="step">
+      <div className="step-head">
+        <span className="step-num" aria-hidden="true">{n}</span>
+        <span className="step-label">{label}</span>
+      </div>
+      {children}
+    </div>
   );
 }
-function SettingsIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold-pure)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  );
-}
-function CameraMiniIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-      <circle cx="12" cy="13" r="4" />
-    </svg>
-  );
-}
-function DownloadMiniIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-    </svg>
-  );
-}
-function WhatsAppMiniIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z" />
-    </svg>
-  );
-}
-function ShareMiniIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="18" cy="5" r="3" />
-      <circle cx="6" cy="12" r="3" />
-      <circle cx="18" cy="19" r="3" />
-      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-    </svg>
-  );
+
+function TempleIconWrap() {
+  return <span style={{ width: 18, height: 18, display: "inline-block" }}><TempleIcon /></span>;
 }

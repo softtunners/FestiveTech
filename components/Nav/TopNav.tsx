@@ -1,27 +1,44 @@
 "use client";
+
 import Link from "next/link";
+import { analytics } from "@/lib/analytics";
+import { CardIcon, MapPinIcon, MusicIcon, WhatsAppIcon } from "@/components/icons";
 
 interface TopNavProps {
-  onScrollToAarti: () => void;
-  onScrollToMandals: () => void;
+  onCard: () => void;
+  onMandals: () => void;
+  onAarti: () => void;
+  onShareWhatsApp: () => void;
 }
 
-export default function TopNav({ onScrollToAarti, onScrollToMandals }: TopNavProps) {
+export default function TopNav({ onCard, onMandals, onAarti, onShareWhatsApp }: TopNavProps) {
   return (
     <header className="top-nav">
       <div className="container nav-inner">
-        <Link href="/" className="brand" aria-label="Bappa Blessings Home">
-          <OmIcon className="brand-icon" />
-          <span>Bappa <span className="accent">Blessings</span></span>
+        <Link href="/" className="brand" aria-label="Bappa Blessings — होम">
+          <BrandMark />
+          <span>बाप्पा <span className="accent">आशीर्वाद</span></span>
         </Link>
-        <nav className="nav-actions" aria-label="Site navigation">
-          <button className="pill-btn" onClick={onScrollToMandals} aria-label="View top Ganpati mandals in Mumbai">
-            <MapPinIcon />
-            <span className="nav-label">Top Mandals</span>
+
+        <nav className="nav-actions" aria-label="मुख्य मेन्यू">
+          <button className="nav-btn" onClick={() => { analytics.ctaClicked("nav_card"); onCard(); }}>
+            <CardIcon />
+            <span>कार्ड</span>
           </button>
-          <button className="pill-btn" onClick={onScrollToAarti} aria-label="Open Aarti playlist">
+          <button className="nav-btn" onClick={() => { analytics.ctaClicked("nav_mandals"); onMandals(); }}>
+            <MapPinIcon />
+            <span>मंडल</span>
+          </button>
+          <button className="nav-btn" onClick={() => { analytics.ctaClicked("nav_aarti"); onAarti(); }}>
             <MusicIcon />
-            <span className="nav-label">Aarti Playlist</span>
+            <span>आरती</span>
+          </button>
+          <button
+            className="nav-btn nav-btn--wa"
+            onClick={() => { analytics.ctaClicked("nav_whatsapp"); onShareWhatsApp(); }}
+          >
+            <WhatsAppIcon />
+            <span>भेजें</span>
           </button>
         </nav>
       </div>
@@ -29,17 +46,18 @@ export default function TopNav({ onScrollToAarti, onScrollToMandals }: TopNavPro
   );
 }
 
-function OmIcon({ className }: { className?: string }) {
+function BrandMark() {
   return (
-    <svg className={className} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="32" height="32" rx="8" fill="#E86A17" />
-      <text x="50%" y="73%" dominantBaseline="middle" textAnchor="middle" fontFamily="serif" fontSize="18" fill="#FFFBEB">ॐ</text>
+    <svg className="brand-icon" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="bm" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FFB300" />
+          <stop offset="55%" stopColor="#F4741F" />
+          <stop offset="100%" stopColor="#D81B60" />
+        </linearGradient>
+      </defs>
+      <rect width="44" height="44" rx="13" fill="url(#bm)" />
+      <text x="50%" y="53%" dominantBaseline="central" textAnchor="middle" fontFamily="serif" fontSize="25" fill="#FFFBF4">ॐ</text>
     </svg>
   );
-}
-function MapPinIcon() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>;
-}
-function MusicIcon() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>;
 }

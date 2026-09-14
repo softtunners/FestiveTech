@@ -1,94 +1,136 @@
 "use client";
-import { useRef, Suspense } from "react";
+
+import { useRef, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 
 import TopNav from "@/components/Nav/TopNav";
 import HeroSection from "@/components/Hero/HeroSection";
-import AdBanner from "@/components/Ads/AdBanner";
+import Choices from "@/components/Choices/Choices";
 import Footer from "@/components/Footer/Footer";
+import Reveal from "@/components/Reveal/Reveal";
+import AdBanner from "@/components/Ads/AdBanner";
+import NativeAd from "@/components/Ads/NativeAd";
+import FloatingWhatsApp from "@/components/WhatsApp/FloatingWhatsApp";
+import type { BlessingHandle } from "@/components/Blessing/BlessingExperience";
+import { analytics } from "@/lib/analytics";
 
-const ParticleCanvas = dynamic(() => import("@/components/Particles/ParticleCanvas"), { ssr: false });
 const BlessingExperience = dynamic(() => import("@/components/Blessing/BlessingExperience"), { ssr: false });
 const AartiPlaylist = dynamic(() => import("@/components/Aarti/AartiPlaylist"), { ssr: false });
 const MumbaiMandals = dynamic(() => import("@/components/Mandals/MumbaiMandals"), { ssr: false });
 
+function Loading({ label }: { label: string }) {
+  return <div style={{ padding: 56, textAlign: "center", color: "var(--ink-3)" }}>{label}</div>;
+}
+
 function HomeInner() {
-  const searchParams = useSearchParams();
-  const fromName = searchParams.get("from") ?? "";
-  const toName = searchParams.get("to") ?? "";
-  const nameParam = searchParams.get("name") ?? "";
-  const initialName = toName || nameParam;
+  const params = useSearchParams();
+  const fromName = params.get("from") ?? "";
+  const initialName = params.get("to") ?? params.get("name") ?? "";
 
-  const personalizationRef = useRef<HTMLDivElement>(null);
-  const aartiRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const mandalsRef = useRef<HTMLDivElement>(null);
+  const aartiRef = useRef<HTMLDivElement>(null);
+  const makerRef = useRef<BlessingHandle>(null);
 
-  const scrollToPersonalization = () =>
-    personalizationRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  const scrollToAarti = () =>
-    aartiRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  const scrollToMandals = () =>
-    mandalsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const goCard = useCallback(
+    () => cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    [],
+  );
+  const goMandals = useCallback(
+    () => mandalsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    [],
+  );
+  const goAarti = useCallback(
+    () => aartiRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    [],
+  );
+
+  /**
+   * Every WhatsApp button on the page routes here.
+   *
+   * If the card is ready it shares straight away; otherwise it scrolls to the
+   * maker so the tap still does something visible rather than nothing.
+   */
+  const shareWhatsApp = useCallback(() => {
+    if (makerRef.current) {
+      makerRef.current.shareWhatsApp();
+      return;
+    }
+    goCard();
+  }, [goCard]);
+
+  useEffect(() => {
+    if (fromName) analytics.referralArrived(fromName);
+  }, [fromName]);
 
   return (
     <>
-      <ParticleCanvas />
-      <TopNav onScrollToAarti={scrollToAarti} onScrollToMandals={scrollToMandals} />
+      <TopNav
+        onCard={goCard}
+        onMandals={goMandals}
+        onAarti={goAarti}
+        onShareWhatsApp={shareWhatsApp}
+      />
 
-      {/* Referral banner */}
-      {fromName && (
-        <div className="container">
-          <div className="referral-banner" role="status" aria-live="polite">
-            <strong>{fromName}</strong> has sent you a sacred Ganesh Chaturthi blessing!
+      <main id="main">
+        <HeroSection onShareWhatsApp={shareWhatsApp} />
+
+        <Choices onCard={goCard} onMandals={goMandals} onAarti={goAarti} />
+
+        {fromName && (
+          <div className="container" style={{ marginTop: 22 }}>
+            <p
+              role="status"
+              style={{
+                background: "var(--gold-l)",
+                border: "2px solid var(--marigold)",
+                borderRadius: 18,
+                padding: "14px 20px",
+                textAlign: "center",
+                fontSize: "1.05rem",
+                color: "var(--ink)",
+              }}
+            >
+              🎉 <strong>{fromName}</strong> ने आपको बाप्पा का आशीर्वाद भेजा है!
+            </p>
           </div>
+        )}
+
+        <AdBanner slot="leaderboard" />
+
+        <div ref={cardRef}>
+          <Suspense fallback={<Loading label="कार्ड तैयार हो रहा है…" />}>
+            <BlessingExperience ref={makerRef} initialName={initialName} />
+          </Suspense>
         </div>
-      )}
 
-      {/* Hero */}
-      <HeroSection onReceiveBlessing={scrollToPersonalization} onViewMandals={scrollToMandals} />
+        <AdBanner slot="rectangle" />
 
-      {/* Ad 1 */}
-      <div className="container">
-        <AdBanner size="leaderboard" />
-      </div>
-      <hr className="gold-divider" />
+        <div ref={mandalsRef}>
+          <Reveal>
+            <Suspense fallback={<Loading label="मंडल आ रहे हैं…" />}>
+              <MumbaiMandals />
+            </Suspense>
+          </Reveal>
+        </div>
 
-      {/* Personalization + Card + Share */}
-      <div ref={personalizationRef}>
-        <Suspense fallback={<div style={{ padding: 60, textAlign: "center", fontFamily: "var(--font-heading)", color: "var(--text-muted)" }}>Loading blessings...</div>}>
-          <BlessingExperience initialName={initialName} fromName={fromName} />
-        </Suspense>
-      </div>
+        <NativeAd />
 
-      {/* Ad 2 */}
-      <div className="container">
-        <AdBanner size="rectangle" />
-      </div>
-      <hr className="gold-divider" />
+        <div ref={aartiRef}>
+          <Reveal>
+            <Suspense fallback={<Loading label="आरती आ रही है…" />}>
+              <AartiPlaylist />
+            </Suspense>
+          </Reveal>
+        </div>
 
-      {/* Mumbai Top Mandals */}
-      <div ref={mandalsRef}>
-        <Suspense fallback={<div style={{ padding: 40, textAlign: "center" }}>Loading Mandals...</div>}>
-          <MumbaiMandals />
-        </Suspense>
-      </div>
+        <AdBanner slot="leaderboard" label="Sponsored" />
+      </main>
 
-      <hr className="gold-divider" />
+      <Footer onCard={goCard} onMandals={goMandals} onAarti={goAarti} />
 
-      {/* Aarti Playlist */}
-      <div ref={aartiRef}>
-        <Suspense fallback={<div style={{ padding: 40, textAlign: "center" }}>Loading Aarti Playlist...</div>}>
-          <AartiPlaylist />
-        </Suspense>
-      </div>
-
-      {/* Ad 3 */}
-      <div className="container">
-        <AdBanner size="leaderboard" label="Sponsored" />
-      </div>
-
-      <Footer />
+      <FloatingWhatsApp onShare={shareWhatsApp} />
     </>
   );
 }

@@ -1,11 +1,28 @@
 "use client";
-export default function Footer() {
+
+interface FooterProps {
+  onCard: () => void;
+  onMandals: () => void;
+  onAarti: () => void;
+}
+
+export default function Footer({ onCard, onMandals, onAarti }: FooterProps) {
   return (
     <footer className="footer">
       <div className="container">
         <p className="footer-mantra">गणपती बाप्पा मोरया</p>
-        <p className="footer-copy">Made with love to spread Bappa&apos;s blessings.</p>
-        <p className="footer-cr">© 2026 Bappa Blessings &nbsp;·&nbsp; May Lord Ganesha bring peace, wisdom and abundance to all.</p>
+        <p style={{ color: "#FFD98A" }}>बाप्पा का आशीर्वाद सब तक पहुँचे 🙏</p>
+
+        <nav className="footer-links" aria-label="फुटर मेन्यू">
+          <button onClick={onCard}>कार्ड बनाएं</button>
+          <button onClick={onMandals}>मंडल देखें</button>
+          <button onClick={onAarti}>आरती सुनें</button>
+        </nav>
+
+        <p className="footer-fine">
+          आपकी फोटो कभी अपलोड नहीं होती — कार्ड आपके ही फ़ोन में बनता है।
+          <br />© {new Date().getFullYear()} · ganpatibappa.online
+        </p>
       </div>
     </footer>
   );

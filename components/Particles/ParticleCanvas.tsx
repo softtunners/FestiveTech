@@ -1,78 +1,120 @@
 "use client";
+
 import { useEffect, useRef } from "react";
 
+/**
+ * Falling marigold petals.
+ *
+ * Scoped to the dark hero rather than fixed over the whole page — petals
+ * drifting across light content sections just looked like dirt on the screen,
+ * and a full-viewport rAF loop is wasted battery on the cheap phones this
+ * site is built for.
+ */
 export default function ParticleCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const canvas = canvasRef.current;
+
+    const canvas = ref.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
-    let animId: number;
+    const parent = canvas.parentElement;
+    if (!parent) return;
 
-    const onResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+    // Cap the pixel ratio: a 3x buffer on a budget GPU costs more than it shows.
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let w = 0;
+    let h = 0;
+
+    const resize = () => {
+      const r = parent.getBoundingClientRect();
+      w = r.width;
+      h = r.height;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
-    window.addEventListener("resize", onResize);
+    resize();
 
-    type Particle = {
+    const ro = new ResizeObserver(resize);
+    ro.observe(parent);
+
+    type P = {
       x: number; y: number; r: number; vy: number; vx: number;
-      rot: number; rotV: number; color: string; opacity: number; type: "petal" | "sparkle";
+      rot: number; rotV: number; color: string; alpha: number; petal: boolean;
     };
 
-    const colors = ["#F59E0B", "#E86A17", "#FDE68A", "#D97706"];
-    const particles: Particle[] = Array.from({ length: 32 }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
+    const colors = ["#FFB300", "#F4741F", "#FFE55C", "#D81B60"];
+    const make = (atTop: boolean): P => ({
+      x: Math.random() * w,
+      y: atTop ? -20 : Math.random() * h,
       r: Math.random() * 5 + 3,
-      vy: Math.random() * 0.7 + 0.28,
-      vx: (Math.random() - 0.5) * 0.4,
+      vy: Math.random() * 0.6 + 0.25,
+      vx: (Math.random() - 0.5) * 0.35,
       rot: Math.random() * 360,
-      rotV: (Math.random() - 0.5) * 1.8,
+      rotV: (Math.random() - 0.5) * 1.6,
       color: colors[Math.floor(Math.random() * colors.length)],
-      opacity: Math.random() * 0.45 + 0.22,
-      type: Math.random() > 0.32 ? "petal" : "sparkle",
-    }));
+      alpha: Math.random() * 0.4 + 0.25,
+      petal: Math.random() > 0.3,
+    });
 
-    const render = () => {
-      ctx.clearRect(0, 0, width, height);
-      particles.forEach((p) => {
+    const particles: P[] = Array.from({ length: 26 }, () => make(false));
+
+    let raf = 0;
+    let running = true;
+
+    const draw = () => {
+      if (!running) return;
+      ctx.clearRect(0, 0, w, h);
+      for (const p of particles) {
         p.y += p.vy;
-        p.x += Math.sin(p.y * 0.012) * 0.55 + p.vx;
+        p.x += Math.sin(p.y * 0.012) * 0.5 + p.vx;
         p.rot += p.rotV;
-        if (p.y > height + 20) { p.y = -20; p.x = Math.random() * width; }
+        if (p.y > h + 20) Object.assign(p, make(true));
+
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate((p.rot * Math.PI) / 180);
-        ctx.globalAlpha = p.opacity;
-        if (p.type === "petal") {
-          ctx.fillStyle = p.color;
-          ctx.beginPath();
-          ctx.ellipse(0, 0, p.r * 1.7, p.r * 0.85, 0, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          ctx.fillStyle = "#FEF3C7";
-          ctx.beginPath();
-          ctx.arc(0, 0, p.r * 0.55, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.petal ? p.color : "#FFF3C4";
+        ctx.beginPath();
+        if (p.petal) ctx.ellipse(0, 0, p.r * 1.7, p.r * 0.8, 0, 0, Math.PI * 2);
+        else ctx.arc(0, 0, p.r * 0.5, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
-      });
-      animId = requestAnimationFrame(render);
+      }
+      raf = requestAnimationFrame(draw);
     };
-    render();
+    draw();
+
+    // Stop burning frames once the hero is scrolled past or the tab is hidden.
+    const io = new IntersectionObserver(([e]) => {
+      running = e.isIntersecting && !document.hidden;
+      if (running) draw();
+      else cancelAnimationFrame(raf);
+    });
+    io.observe(parent);
+
+    const onVis = () => {
+      running = !document.hidden;
+      if (running) draw();
+      else cancelAnimationFrame(raf);
+    };
+    document.addEventListener("visibilitychange", onVis);
 
     return () => {
-      window.removeEventListener("resize", onResize);
-      cancelAnimationFrame(animId);
+      running = false;
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, []);
 
-  return <canvas ref={canvasRef} id="particle-canvas" aria-hidden="true" />;
+  return <canvas ref={ref} className="petal-canvas" aria-hidden="true" />;
 }

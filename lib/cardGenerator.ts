@@ -1,5 +1,10 @@
 export type CardFormat = "square" | "story";
-export type CardFrame = "temple-arch" | "marigold" | "royal-velvet";
+export type CardFrame =
+  | "temple-arch"
+  | "marigold"
+  | "royal-velvet"
+  | "peacock"
+  | "violet";
 
 export interface CardOptions {
   senderName?: string;
@@ -8,7 +13,7 @@ export interface CardOptions {
   closing?: string;
   userPhotoDataUrl?: string | null;
   format?: CardFormat; // "square" (1080x1080) or "story" (1080x1920)
-  frame?: CardFrame; // "temple-arch" | "marigold" | "royal-velvet"
+  frame?: CardFrame;
 }
 
 export const GREETING_PRESETS = [
@@ -67,6 +72,8 @@ export async function generateBlessingCard(options: CardOptions): Promise<HTMLCa
     drawRoyalVelvetBg(ctx, W, H);
   } else if (frame === "marigold") {
     drawMarigoldBg(ctx, W, H);
+  } else if (frame === "peacock" || frame === "violet") {
+    drawJewelBg(ctx, W, H, JEWEL[frame]);
   } else {
     drawTempleArchBg(ctx, W, H);
   }
@@ -76,6 +83,8 @@ export async function generateBlessingCard(options: CardOptions): Promise<HTMLCa
     drawMarigoldGarlandBorder(ctx, W, H);
   } else if (frame === "royal-velvet") {
     drawRoyalVelvetBorder(ctx, W, H);
+  } else if (frame === "peacock" || frame === "violet") {
+    drawJewelBorder(ctx, W, H, JEWEL[frame]);
   } else {
     drawTempleArchBorder(ctx, W, H);
   }
@@ -196,6 +205,71 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
     img.onerror = () => resolve(null);
     img.src = src;
   });
+}
+
+/**
+ * Cooler palettes, so the three original frames (all warm red-orange and
+ * hard to tell apart at thumbnail size) are not the only choice on offer.
+ * Both stay temple-appropriate: peacock green and temple violet are as
+ * traditional in Indian devotional art as saffron is.
+ */
+interface JewelPalette {
+  inner: string;
+  mid: string;
+  outer: string;
+  edge: string;
+  accent: string;
+  accentSoft: string;
+}
+
+const JEWEL: Record<"peacock" | "violet", JewelPalette> = {
+  peacock: {
+    inner: "#0E6B70",
+    mid: "#084B54",
+    outer: "#03282F",
+    edge: "#010F13",
+    accent: "#FBBF24",
+    accentSoft: "#FEF3C7",
+  },
+  violet: {
+    inner: "#5B2183",
+    mid: "#3D1259",
+    outer: "#1F0733",
+    edge: "#0D0218",
+    accent: "#F0A6D8",
+    accentSoft: "#FDE7F6",
+  },
+};
+
+function drawJewelBg(ctx: CanvasRenderingContext2D, W: number, H: number, p: JewelPalette) {
+  const grad = ctx.createRadialGradient(W / 2, H * 0.38, 60, W / 2, H * 0.45, W * 0.95);
+  grad.addColorStop(0, p.inner);
+  grad.addColorStop(0.38, p.mid);
+  grad.addColorStop(0.75, p.outer);
+  grad.addColorStop(1, p.edge);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+  drawSubtleSunRays(ctx, W, H * 0.35, "rgba(255, 255, 255, 0.05)");
+}
+
+function drawJewelBorder(ctx: CanvasRenderingContext2D, W: number, H: number, p: JewelPalette) {
+  const m = 36;
+  ctx.strokeStyle = p.accent;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(m, m, W - m * 2, H - m * 2);
+
+  ctx.strokeStyle = p.accentSoft;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(m + 12, m + 12, W - (m + 12) * 2, H - (m + 12) * 2);
+
+  [
+    [m, m, 0],
+    [W - m, m, Math.PI / 2],
+    [W - m, H - m, Math.PI],
+    [m, H - m, -Math.PI / 2],
+  ].forEach(([x, y, angle]) => drawCornerMotif(ctx, x, y, angle));
+
+  drawHangingBell(ctx, W / 2, m + 14);
 }
 
 function drawTempleArchBg(ctx: CanvasRenderingContext2D, W: number, H: number) {

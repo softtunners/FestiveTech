@@ -96,7 +96,7 @@ export default function BlessingExperience({
   };
 
   const getShareUrl = () => {
-    if (typeof window === "undefined") return "https://bappablessings.online";
+    if (typeof window === "undefined") return "https://ganpatibappa.online";
     return window.location.origin;
   };
 

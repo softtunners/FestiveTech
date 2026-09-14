@@ -183,7 +183,7 @@ export async function generateBlessingCard(options: CardOptions): Promise<HTMLCa
   const watermarkY = H - (isStory ? 44 : 24);
   ctx.fillStyle = "rgba(254, 243, 199, 0.55)";
   ctx.font = isStory ? "500 20px sans-serif" : "500 16px sans-serif";
-  ctx.fillText("bappablessings.online  |  Ganesh Utsav 2026", W / 2, watermarkY);
+  ctx.fillText("ganpatibappa.online  |  Ganesh Utsav 2026", W / 2, watermarkY);
 
   return canvas;
 }

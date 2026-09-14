@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     "गणेश चतुर्थी कार्ड",
   ],
   authors: [{ name: "Bappa Blessings" }],
-  metadataBase: new URL("https://bappablessings.online"),
+  metadataBase: new URL("https://ganpatibappa.online"),
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23E86A17'/><text y='.9em' font-size='80' x='10'>ॐ</text></svg>",
   },
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     description:
       "बाप्पा के आशीर्वाद का सुंदर स्टेटस कार्ड अपने नाम व फोटो के साथ बनाएं और WhatsApp पर शेयर करें।",
     images: ["/images/ganesha_cinematic.jpg"],
-    url: "https://bappablessings.online/",
+    url: "https://ganpatibappa.online/",
   },
   twitter: {
     card: "summary_large_image",

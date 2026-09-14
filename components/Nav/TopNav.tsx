@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { analytics } from "@/lib/analytics";
-import { CardIcon, MapPinIcon, MusicIcon, WhatsAppIcon } from "@/components/icons";
+import { WhatsAppIcon } from "@/components/icons";
 
 interface TopNavProps {
   onCard: () => void;
@@ -13,51 +13,33 @@ interface TopNavProps {
 
 export default function TopNav({ onCard, onMandals, onAarti, onShareWhatsApp }: TopNavProps) {
   return (
-    <header className="top-nav">
+    <header className="nav">
       <div className="container nav-inner">
-        <Link href="/" className="brand" aria-label="Bappa Blessings — होम">
-          <BrandMark />
-          <span>बाप्पा <span className="accent">आशीर्वाद</span></span>
+        <Link href="/" className="brand" aria-label="बाप्पा आशीर्वाद — होम">
+          <span className="brand-mark" aria-hidden="true">ॐ</span>
+          बाप्पा आशीर्वाद
         </Link>
 
-        <nav className="nav-actions" aria-label="मुख्य मेन्यू">
-          <button className="nav-btn" onClick={() => { analytics.ctaClicked("nav_card"); onCard(); }}>
-            <CardIcon />
-            <span>कार्ड</span>
+        <nav className="nav-links" aria-label="मुख्य मेन्यू">
+          <button className="nav-link" onClick={() => { analytics.ctaClicked("nav_card"); onCard(); }}>
+            कार्ड
           </button>
-          <button className="nav-btn" onClick={() => { analytics.ctaClicked("nav_mandals"); onMandals(); }}>
-            <MapPinIcon />
-            <span>मंडल</span>
+          <button className="nav-link" onClick={() => { analytics.ctaClicked("nav_mandals"); onMandals(); }}>
+            मंडल
           </button>
-          <button className="nav-btn" onClick={() => { analytics.ctaClicked("nav_aarti"); onAarti(); }}>
-            <MusicIcon />
-            <span>आरती</span>
+          <button className="nav-link" onClick={() => { analytics.ctaClicked("nav_aarti"); onAarti(); }}>
+            आरती
           </button>
           <button
-            className="nav-btn nav-btn--wa"
+            className="btn btn--wa"
+            style={{ minHeight: 44, padding: "10px 18px", fontSize: "0.9375rem", marginLeft: 6 }}
             onClick={() => { analytics.ctaClicked("nav_whatsapp"); onShareWhatsApp(); }}
           >
             <WhatsAppIcon />
-            <span>भेजें</span>
+            भेजें
           </button>
         </nav>
       </div>
     </header>
-  );
-}
-
-function BrandMark() {
-  return (
-    <svg className="brand-icon" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <defs>
-        <linearGradient id="bm" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FFB300" />
-          <stop offset="55%" stopColor="#F4741F" />
-          <stop offset="100%" stopColor="#D81B60" />
-        </linearGradient>
-      </defs>
-      <rect width="44" height="44" rx="13" fill="url(#bm)" />
-      <text x="50%" y="53%" dominantBaseline="central" textAnchor="middle" fontFamily="serif" fontSize="25" fill="#FFFBF4">ॐ</text>
-    </svg>
   );
 }

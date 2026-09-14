@@ -11,6 +11,7 @@ import Footer from "@/components/Footer/Footer";
 import Reveal from "@/components/Reveal/Reveal";
 import AdBanner from "@/components/Ads/AdBanner";
 import NativeAd from "@/components/Ads/NativeAd";
+import SponsoredLink from "@/components/Ads/SponsoredLink";
 import FloatingWhatsApp from "@/components/WhatsApp/FloatingWhatsApp";
 import type { BlessingHandle } from "@/components/Blessing/BlessingExperience";
 import { analytics } from "@/lib/analytics";
@@ -20,7 +21,7 @@ const AartiPlaylist = dynamic(() => import("@/components/Aarti/AartiPlaylist"), 
 const MumbaiMandals = dynamic(() => import("@/components/Mandals/MumbaiMandals"), { ssr: false });
 
 function Loading({ label }: { label: string }) {
-  return <div style={{ padding: 56, textAlign: "center", color: "var(--ink-3)" }}>{label}</div>;
+  return <div style={{ padding: 64, textAlign: "center", color: "var(--ink-3)" }}>{label}</div>;
 }
 
 function HomeInner() {
@@ -46,12 +47,7 @@ function HomeInner() {
     [],
   );
 
-  /**
-   * Every WhatsApp button on the page routes here.
-   *
-   * If the card is ready it shares straight away; otherwise it scrolls to the
-   * maker so the tap still does something visible rather than nothing.
-   */
+  /** Every WhatsApp button routes here. */
   const shareWhatsApp = useCallback(() => {
     if (makerRef.current) {
       makerRef.current.shareWhatsApp();
@@ -66,36 +62,29 @@ function HomeInner() {
 
   return (
     <>
-      <TopNav
-        onCard={goCard}
-        onMandals={goMandals}
-        onAarti={goAarti}
-        onShareWhatsApp={shareWhatsApp}
-      />
+      <TopNav onCard={goCard} onMandals={goMandals} onAarti={goAarti} onShareWhatsApp={shareWhatsApp} />
 
       <main id="main">
-        <HeroSection onShareWhatsApp={shareWhatsApp} />
-
-        <Choices onCard={goCard} onMandals={goMandals} onAarti={goAarti} />
-
         {fromName && (
-          <div className="container" style={{ marginTop: 22 }}>
+          <div className="container" style={{ paddingTop: 24 }}>
             <p
               role="status"
               style={{
-                background: "var(--gold-l)",
-                border: "2px solid var(--marigold)",
-                borderRadius: 18,
-                padding: "14px 20px",
-                textAlign: "center",
-                fontSize: "1.05rem",
+                background: "var(--accent-soft)",
+                border: "1px solid var(--line-2)",
+                borderRadius: "var(--radius)",
+                padding: "14px 18px",
                 color: "var(--ink)",
               }}
             >
-              🎉 <strong>{fromName}</strong> ने आपको बाप्पा का आशीर्वाद भेजा है!
+              <strong>{fromName}</strong> ने आपको बाप्पा का आशीर्वाद भेजा है।
             </p>
           </div>
         )}
+
+        <HeroSection onShareWhatsApp={shareWhatsApp} />
+
+        <Choices onCard={goCard} onMandals={goMandals} onAarti={goAarti} />
 
         <AdBanner slot="leaderboard" />
 
@@ -126,6 +115,7 @@ function HomeInner() {
         </div>
 
         <AdBanner slot="leaderboard" label="Sponsored" />
+        <SponsoredLink />
       </main>
 
       <Footer onCard={goCard} onMandals={goMandals} onAarti={goAarti} />

@@ -13,23 +13,25 @@ interface AdBannerProps {
 /**
  * Adsterra display banner.
  *
- * Two things here are deliberate:
+ * Three things are deliberate here:
  *
- * 1. The ad runs inside an `srcdoc` iframe. Adsterra's banner loader reads a
- *    *global* `atOptions` object, so two banners injected into the same page
- *    would race and both render the last-set size. One iframe per banner gives
- *    each loader its own window, which is the only reliable way to run more
- *    than one unit on a page.
+ * 1. The ad runs inside an `srcdoc` iframe. Adsterra's loader reads a *global*
+ *    `atOptions`, so two banners on one page would race and both render the
+ *    last-set size. One iframe per banner gives each its own window.
  *
- * 2. Nothing loads until the slot is near the viewport, and the slot reserves
- *    its exact height beforehand, so ads never push content around (CLS).
+ * 2. Nothing loads until the slot nears the viewport.
+ *
+ * 3. An unfilled slot leaves no trace. Ad fill is never 100%, and a bordered
+ *    box labelled "Advertisement" wrapped around nothing is the single most
+ *    broken-looking thing a page can show. The frame and label appear only
+ *    once the unit has actually rendered something.
  */
 export default function AdBanner({ slot = "leaderboard", label = "Advertisement" }: AdBannerProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
   const [isNarrow, setIsNarrow] = useState(false);
+  const [filled, setFilled] = useState(false);
 
-  // Swap the 728x90 leaderboard for a 320x50 on phones.
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 760px)");
     const sync = () => setIsNarrow(mq.matches);
@@ -55,31 +57,37 @@ export default function AdBanner({ slot = "leaderboard", label = "Advertisement"
   }, []);
 
   let unit: BannerUnit | null;
-  if (slot === "leaderboard") unit = isNarrow ? BANNERS.mobile ?? BANNERS.leaderboard : BANNERS.leaderboard;
-  else if (slot === "rectangle") unit = BANNERS.rectangle;
-  else unit = BANNERS.skyscraper;
+  if (slot === "leaderboard") {
+    // Fall back to whichever size is configured rather than showing nothing.
+    unit = isNarrow
+      ? BANNERS.mobile ?? BANNERS.leaderboard
+      : BANNERS.leaderboard ?? BANNERS.mobile;
+  } else if (slot === "rectangle") {
+    unit = BANNERS.rectangle;
+  } else {
+    unit = BANNERS.skyscraper;
+  }
 
-  // No key configured for this slot — render nothing at all rather than an
-  // empty labelled box that makes the page look broken.
   if (!unit) return null;
 
   const sizeClass =
     slot === "rectangle" ? "ad-rectangle" : slot === "skyscraper" ? "ad-native" : "ad-leaderboard";
 
   return (
-    <div className="ad-zone" ref={hostRef}>
-      <div className={`ad-inner ${sizeClass}`}>
-        <div className="ad-label-text">{label}</div>
-        <div className="ad-content" style={{ minHeight: unit.height }}>
-          {inView && <BannerFrame unit={unit} />}
+    <div className="ad-zone" ref={hostRef} data-filled={filled}>
+      <div className={`ad-inner ${sizeClass}`} style={{ minHeight: filled ? undefined : 0 }}>
+        {filled && <span className="ad-label-text">{label}</span>}
+        <div className="ad-content">
+          {inView && <BannerFrame unit={unit} onFilled={() => setFilled(true)} />}
         </div>
       </div>
     </div>
   );
 }
 
-function BannerFrame({ unit }: { unit: BannerUnit }) {
-  const src = absoluteSrc(`//www.highrevenueformat.com/${unit.key}/invoke.js`);
+function BannerFrame({ unit, onFilled }: { unit: BannerUnit; onFilled: () => void }) {
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const src = absoluteSrc(`//www.highperformanceformat.com/${unit.key}/invoke.js`);
 
   const doc = `<!doctype html><html><head><meta charset="utf-8">
 <style>html,body{margin:0;padding:0;overflow:hidden;background:transparent}</style>
@@ -96,15 +104,51 @@ function BannerFrame({ unit }: { unit: BannerUnit }) {
 <script type="text/javascript" src="${src}"><\/script>
 </body></html>`;
 
+  /**
+   * Decide whether the unit actually filled.
+   *
+   * `srcdoc` inherits this page's origin, so the inner document is readable.
+   * The loader appends its own iframe/ins on success; on a no-fill the body
+   * holds nothing but the two scripts. If the check is ever blocked we
+   * assume filled, so a working ad is never hidden by a failed probe.
+   */
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const check = () => {
+      try {
+        const body = el.contentDocument?.body;
+        if (!body) return;
+        const rendered = body.querySelector("iframe, ins, img, a, div");
+        if (rendered) onFilled();
+      } catch {
+        onFilled();
+      }
+    };
+
+    const onLoad = () => {
+      // The loader injects asynchronously after its own script runs.
+      timer = setTimeout(check, 1500);
+    };
+
+    el.addEventListener("load", onLoad);
+    return () => {
+      el.removeEventListener("load", onLoad);
+      clearTimeout(timer);
+    };
+  }, [onFilled]);
+
   return (
     <iframe
+      ref={frameRef}
       title="Advertisement"
       srcDoc={doc}
       width={unit.width}
       height={unit.height}
       scrolling="no"
       loading="lazy"
-      // Ads need scripts and their own origin; withhold everything else.
       sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-same-origin"
       style={{ border: 0, display: "block", maxWidth: "100%" }}
     />

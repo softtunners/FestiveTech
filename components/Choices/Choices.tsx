@@ -1,6 +1,7 @@
 "use client";
 
 import { analytics } from "@/lib/analytics";
+import { CardIcon, MapPinIcon, MusicIcon } from "@/components/icons";
 
 interface ChoicesProps {
   onCard: () => void;
@@ -9,57 +10,33 @@ interface ChoicesProps {
 }
 
 /**
- * The site's real navigation.
- *
- * Three oversized, colour-coded, picture-led tiles answering one question —
- * "what do you want to do?" Someone who cannot read the copy can still tell
- * these apart by colour and symbol, which a text menu never allows.
+ * Three plain tiles. Line icons rather than emoji — emoji render differently
+ * on every device and read as decoration, not interface.
  */
 export default function Choices({ onCard, onMandals, onAarti }: ChoicesProps) {
   const tiles = [
-    {
-      key: "card",
-      cls: "choice--card",
-      emoji: "💌",
-      title: "कार्ड बनाएं",
-      desc: "अपना नाम और फोटो डालें",
-      go: onCard,
-    },
-    {
-      key: "mandal",
-      cls: "choice--mandal",
-      emoji: "🛕",
-      title: "मंडल देखें",
-      desc: "मुंबई के बड़े गणपति",
-      go: onMandals,
-    },
-    {
-      key: "aarti",
-      cls: "choice--aarti",
-      emoji: "🎶",
-      title: "आरती सुनें",
-      desc: "भजन और आरती",
-      go: onAarti,
-    },
+    { key: "card", Icon: CardIcon, title: "कार्ड बनाएं", desc: "नाम और फोटो के साथ", go: onCard },
+    { key: "mandal", Icon: MapPinIcon, title: "मंडल देखें", desc: "मुंबई के बड़े गणपति", go: onMandals },
+    { key: "aarti", Icon: MusicIcon, title: "आरती सुनें", desc: "आरती और भजन", go: onAarti },
   ];
 
   return (
-    <section className="choices">
+    <section className="section section--band section--line">
       <div className="container">
-        <div className="choices-grid">
-          {tiles.map((t) => (
+        <div className="choices">
+          {tiles.map(({ key, Icon, title, desc, go }) => (
             <button
-              key={t.key}
+              key={key}
               type="button"
-              className={`choice ${t.cls}`}
+              className="choice"
               onClick={() => {
-                analytics.ctaClicked(`choice_${t.key}`);
-                t.go();
+                analytics.ctaClicked(`choice_${key}`);
+                go();
               }}
             >
-              <span className="choice-icon" aria-hidden="true">{t.emoji}</span>
-              <span className="choice-title">{t.title}</span>
-              <span className="choice-desc">{t.desc}</span>
+              <span className="choice-icon" aria-hidden="true"><Icon /></span>
+              <span className="choice-title">{title}</span>
+              <span className="choice-desc">{desc}</span>
             </button>
           ))}
         </div>

@@ -83,35 +83,31 @@ These show up in GA under **Reports → Engagement → Events** (allow ~24h, or 
 
 ## Design
 
-Built for the actual audience: people with limited literacy, on cheap Android
-phones, often outdoors.
+Restraint is the whole idea. Earlier versions piled on gradients, glows,
+particles, a fake gold arch and five competing accent colours; all of it
+fought the photograph and made the page feel like a template.
 
-- **Light content sections, dark hero.** The page opens and closes dark and the
-  content sits lit between — that contrast is what makes it read as *sections*
-  rather than one endless gradient. Light surfaces also stay legible in direct
-  sunlight, where a dark UI washes out.
-- **Colour-coded sections.** Saffron = make a card, peacock = mandals,
-  purple = aarti. Someone who cannot read the headings can still tell where
-  they are.
-- **Icons carry meaning, words confirm it.** Nav items, step markers and every
-  action pair a symbol with a short label, never a label alone.
-- **One green path.** Every WhatsApp button on the site — hero, nav, floating,
-  and in the card maker — routes through a single handler. The floating button
-  hides itself while the hero's own green button is on screen, so there are
-  never two competing green buttons.
-- **Selection is shown three ways** (border, fill, check badge), because one
-  cue is easy to miss.
-- **Minimum 56px tap targets** throughout.
-- Everything animated is disabled under `prefers-reduced-motion`.
+- **Two colours.** Saffron for actions, green for WhatsApp. Everything else is
+  cream, white and ink. No gradients anywhere.
+- **The photograph is the design.** Shown large and unframed. No arch, no
+  garland, no glow.
+- **Hairlines, not shadows.** One shadow token exists and is used twice.
+- **Two typefaces.** Rozha One for headings only; Noto Sans Devanagari for all
+  UI and body text, because a serif is harder to read at small sizes and this
+  audience reads slowly.
+- **No decorative motion.** The particle canvas, light rays, mandala, aura and
+  parallax tilt are all gone. A short fade as sections enter view is all that
+  remains, and it is disabled under `prefers-reduced-motion`.
+- **Selection is a 2px accent ring** — not a fill plus a badge plus a shadow.
+- **52px minimum tap targets**; body text at 17px.
+- No emoji in the interface: they render differently on every device and read
+  as decoration rather than controls.
 
-### The hero
+### Devanagari
 
-Layered planes on a single CSS `perspective`, each at its own `translateZ`:
-mandala → light rays → aura → arch + idol → garland → diyas. Rotating the one
-parent slides them past each other, and that parallax *between* layers is what
-reads as 3D. Pointer-driven on desktop, scroll-driven on touch. Petals are
-canvas-drawn and scoped to the hero — they stop rendering when it scrolls out
-of view or the tab is hidden.
+`letter-spacing` is never applied to Devanagari text — tracking pulls conjuncts
+apart and makes words harder to parse. Headings get a small `padding-block`
+because Rozha One's ascenders clip otherwise.
 
 ## Structure
 

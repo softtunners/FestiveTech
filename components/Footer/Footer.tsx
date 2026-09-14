@@ -11,7 +11,6 @@ export default function Footer({ onCard, onMandals, onAarti }: FooterProps) {
     <footer className="footer">
       <div className="container">
         <p className="footer-mantra">गणपती बाप्पा मोरया</p>
-        <p style={{ color: "#FFD98A" }}>बाप्पा का आशीर्वाद सब तक पहुँचे 🙏</p>
 
         <nav className="footer-links" aria-label="फुटर मेन्यू">
           <button onClick={onCard}>कार्ड बनाएं</button>
@@ -21,7 +20,7 @@ export default function Footer({ onCard, onMandals, onAarti }: FooterProps) {
 
         <p className="footer-fine">
           आपकी फोटो कभी अपलोड नहीं होती — कार्ड आपके ही फ़ोन में बनता है।
-          <br />© {new Date().getFullYear()} · ganpatibappa.online
+          <br />© {new Date().getFullYear()} ganpatibappa.online
         </p>
       </div>
     </footer>

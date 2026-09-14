@@ -58,3 +58,10 @@ export function absoluteSrc(src: string): string {
   if (!src) return "";
   return src.startsWith("//") ? `https:${src}` : src;
 }
+
+/**
+ * Adsterra Direct Link ("Smartlink") — a plain URL that pays per visit.
+ * Used for a single clearly-labelled sponsored link; it is never disguised
+ * as site navigation.
+ */
+export const SMARTLINK = process.env.NEXT_PUBLIC_ADSTERRA_SMARTLINK ?? "";

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Outfit, Poppins, Rozha_One, Noto_Serif_Devanagari } from "next/font/google";
+import { Outfit, Rozha_One, Noto_Sans_Devanagari } from "next/font/google";
 import { GA_ID } from "@/lib/analytics";
 import AdsterraGlobal from "@/components/Ads/AdsterraGlobal";
 import "./globals.css";
@@ -11,28 +11,33 @@ import "./globals.css";
  * to fonts.googleapis.com. Self-hosting removes that request entirely and
  * `display: swap` means text is readable immediately.
  */
-const outfit = Outfit({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--f-outfit",
-  display: "swap",
-});
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--f-poppins",
-  display: "swap",
-});
+/**
+ * Two faces only.
+ *
+ * Rozha One is a heavy Devanagari display face — used for headings and
+ * nothing else. Noto Sans Devanagari carries all UI and body text: it is
+ * far more legible at small sizes than a serif, which matters most for
+ * readers who are slow.
+ */
 const rozha = Rozha_One({
   subsets: ["latin", "devanagari"],
   weight: "400",
   variable: "--f-rozha",
   display: "swap",
 });
-const notoDev = Noto_Serif_Devanagari({
-  subsets: ["devanagari"],
-  weight: ["400", "600", "700"],
-  variable: "--f-noto-dev",
+
+const notoSansDev = Noto_Sans_Devanagari({
+  subsets: ["devanagari", "latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--f-noto-sans-dev",
+  display: "swap",
+});
+
+/** Latin fallback so English and numerals don't drop to a system default. */
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--f-outfit",
   display: "swap",
 });
 
@@ -103,7 +108,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#170A2B",
+  themeColor: "#FAF8F4",
   width: "device-width",
   initialScale: 1,
   // Never cap zoom — pinch-to-zoom is an accessibility requirement.
@@ -162,7 +167,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="hi"
-      className={`${outfit.variable} ${poppins.variable} ${rozha.variable} ${notoDev.variable}`}
+      className={`${rozha.variable} ${notoSansDev.variable} ${outfit.variable}`}
     >
       <head>
         {/* Warm up the ad origins so the first ad call isn't paying for DNS + TLS. */}

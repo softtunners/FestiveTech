@@ -138,7 +138,7 @@ export default function MumbaiMandals() {
                   </button>
                   <a
                     href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                      `🙏 ${m.name} (${m.marathiName}) के दर्शन करें!\n\n${m.address}\nअच्छा समय: ${m.bestTimeToVisit}\n\n${m.directionsUrl}`,
+                      `🙏 ${m.name} (${m.marathiName}) के दर्शन और आरती गाइड!\n\n📍 पता: ${m.address}\n⏰ अच्छा समय: ${m.bestTimeToVisit}\n\n🚩 सभी प्रसिद्ध मुंबई मंडलों की सूची व अपना पावन कार्ड बनाएं:\n👉 https://ganpatibappa.online`,
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"

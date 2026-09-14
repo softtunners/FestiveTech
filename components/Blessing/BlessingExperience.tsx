@@ -88,8 +88,10 @@ export default function BlessingExperience({ initialName = "", ref }: BlessingEx
     typeof window === "undefined" ? "https://ganpatibappa.online" : window.location.origin;
 
   const shareText = useCallback(() => {
-    const from = senderName.trim() ? `\n— *${senderName.trim()}*\n` : "";
-    return `🌺 *गणेश चतुर्थी की हार्दिक शुभकामनाएं!* 🙏\n\n${message}\n\n*गणपती बाप्पा मोरया!*${from}\n\n✨ आप भी अपना कार्ड बनाएं:\n👉 ${siteUrl()}`;
+    const name = senderName.trim();
+    const from = name ? `\n— *${name}*\n` : "";
+    const referralUrl = name ? `${siteUrl()}?from=${encodeURIComponent(name)}` : siteUrl();
+    return `🌺 *गणेश चतुर्थी की हार्दिक शुभकामनाएं!* 🙏\n\n${message}\n\n*गणपती बाप्पा मोरया!*${from}\n\n✨ आप भी अपने नाम का विशेष कार्ड बनाएं:\n👉 ${referralUrl}`;
   }, [senderName, message]);
 
   const download = useCallback(() => {

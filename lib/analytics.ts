@@ -6,7 +6,8 @@
  * something more useful than a single pageview count.
  */
 
-export const GA_ID = "G-JTDZYPYW55";
+export const GA_ID =
+  process.env.NEXT_PUBLIC_GA_ID ?? "G-F2C5K7HJF0";
 
 type GtagArgs =
   | ["js", Date]

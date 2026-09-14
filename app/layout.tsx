@@ -55,15 +55,18 @@ export const metadata: Metadata = {
   applicationName: "Bappa Blessings",
   keywords: [
     "Ganesh Chaturthi 2026",
-    "Ganpati Bappa Morya",
-    "Ganesh Status Card",
-    "Ganesh Chaturthi Card Maker",
-    "Ganpati Bappa Online",
-    "Lalbaugcha Raja darshan",
-    "Mumbai Ganpati mandals",
-    "Ganesh Aarti",
-    "गणेश चतुर्थी कार्ड",
-    "गणपती बाप्पा मोरया",
+    "Ganesh Chaturthi Wishes with Photo",
+    "Ganesh Status Card Maker",
+    "Ganpati Bappa Morya Wishes",
+    "Ganesh Chaturthi WhatsApp Status Maker",
+    "Ganpati Bappa Online Greeting",
+    "Lalbaugcha Raja 2026 darshan timings",
+    "Mumbai Ganpati mandals guide",
+    "Ganesh Aarti sangrah",
+    "गणेश चतुर्थी कार्ड मेकर",
+    "गणपती बाप्पा मोरया स्टेटस",
+    "गणेश चतुर्थी हार्दिक शुभकामनाएं",
+    "फोटो वाला गणेश स्टेटस",
   ],
   authors: [{ name: "Ganpati Bappa Online", url: SITE_URL }],
   creator: "Ganpati Bappa Online",
@@ -71,11 +74,12 @@ export const metadata: Metadata = {
   category: "Festival",
   icons: {
     icon: [
-      {
-        url: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23E86A17'/><text y='.9em' font-size='80' x='10'>ॐ</text></svg>",
-      },
+      { url: "/icon", sizes: "48x48", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
     ],
-    apple: "/images/ganesha_hero.jpg",
+    apple: [
+      { url: "/apple-icon", sizes: "180x180", type: "image/png" },
+    ],
   },
   openGraph: {
     type: "website",
@@ -84,31 +88,27 @@ export const metadata: Metadata = {
     title: "गणेश चतुर्थी की हार्दिक शुभकामनाएं | अपना पावन कार्ड बनाएं",
     description:
       "बाप्पा के आशीर्वाद का सुंदर स्टेटस कार्ड अपने नाम व फोटो के साथ बनाएं और WhatsApp पर शेयर करें। पूरी तरह मुफ़्त।",
-    images: [
-      {
-        url: "/images/ganesha_cinematic.jpg",
-        width: 896,
-        height: 1200,
-        alt: "गणेश चतुर्थी पर सजी हुई भगवान गणेश की मूर्ति",
-      },
-    ],
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
     title: "गणेश चतुर्थी की हार्दिक शुभकामनाएं | ganpatibappa.online",
     description: "बाप्पा के आशीर्वाद का सुंदर स्टेटस कार्ड अपने नाम व फोटो के साथ बनाएं।",
-    images: ["/images/ganesha_cinematic.jpg"],
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FAF8F4",
+  themeColor: "#170A2B",
   width: "device-width",
   initialScale: 1,
   // Never cap zoom — pinch-to-zoom is an accessibility requirement.
@@ -159,6 +159,35 @@ const jsonLd = {
         },
       },
       image: [`${SITE_URL}/images/ganesha_cinematic.jpg`],
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "गणेश चतुर्थी पर अपने नाम और फोटो का स्टेटस कार्ड कैसे बनाएं?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "ganpatibappa.online पर जाएं, अपना नाम दर्ज करें, अपनी फोटो अपलोड करें या फ्रेम चुनें, और 'WhatsApp पर भेजें' या 'डाउनलोड करें' पर क्लिक करें। यह पूरी तरह निःशुल्क है।",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "क्या फोटो अपलोड करना सुरक्षित है?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "हाँ, पूरी तरह सुरक्षित है। आपकी फोटो आपके ही फोन या ब्राउज़र में प्रोसेस होती है और किसी भी सर्वर पर सेव नहीं की जाती।",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "मुंबई के प्रमुख गणपति मंडल कौन से हैं?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "मुंबई के सबसे प्रसिद्ध मंडलों में लालबागच्या राजा (लालबाग), जीएसबी सेवा मंडल (किंग्स सर्कल), अंधेरीचा राजा, खेतवाड़ी 12वीं गली और सिद्धिविनायक मंदिर शामिल हैं।",
+          },
+        },
+      ],
     },
   ],
 };

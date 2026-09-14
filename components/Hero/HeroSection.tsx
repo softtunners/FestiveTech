@@ -21,7 +21,10 @@ export default function HeroSection({ onShareWhatsApp }: HeroSectionProps) {
         <div className="hero-text">
           <p className="eyebrow">श्री गणेशाय नमः</p>
 
-          <h1 className="display hero-title">गणपती बाप्पा मोरया</h1>
+          <h1 className="display hero-title">
+            गणपती बाप्पा मोरया
+            <span className="sr-only"> — Ganesh Chaturthi 2026 Greeting Card & WhatsApp Status Maker</span>
+          </h1>
 
           <p className="lede hero-lede">
             अपने नाम के साथ सुंदर कार्ड बनाएं और परिवार-दोस्तों को WhatsApp पर भेजें।
